@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model animales {
+  id                                         Int                     @id @default(autoincrement())
+  codigo                                     String                  @unique @db.VarChar(30)
+  nombre                                     String?                 @db.VarChar(50)
+  especie_id                                 Int
+  raza_id                                    Int
+  genero                                     String                  @db.VarChar(10)
+  fecha_nacimiento                           DateTime?               @db.Date
+  origen                                     String                  @default("Nacido") @db.VarChar(20)
+  fecha_ingreso                              DateTime?               @db.Date
+  madre_id                                   Int?
+  padre_id                                   Int?
+  lote_id                                    Int?
+  estado                                     String?                 @default("Activo") @db.VarChar(20)
+  creado_en                                  DateTime?               @default(now()) @db.Timestamp(6)
+  especies                                   especies                @relation(fields: [especie_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lotes_animales                             lotes_animales?         @relation(fields: [lote_id], references: [id], onUpdate: NoAction)
+  animales_animales_madre_idToanimales       animales?               @relation("animales_madre_idToanimales", fields: [madre_id], references: [id], onUpdate: NoAction)
+  other_animales_animales_madre_idToanimales animales[]              @relation("animales_madre_idToanimales")
+  animales_animales_padre_idToanimales       animales?               @relation("animales_padre_idToanimales", fields: [padre_id], references: [id], onUpdate: NoAction)
+  other_animales_animales_padre_idToanimales animales[]              @relation("animales_padre_idToanimales")
+  razas                                      razas                   @relation(fields: [raza_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  eventos_sanitarios                         eventos_sanitarios[]
+  produccion_leche                           produccion_leche[]
+  registros_peso                             registros_peso[]
+  seguimiento_gestacion                      seguimiento_gestacion[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bodega {
+  id                Int                @id @default(autoincrement())
+  categoria_id      Int
+  nombre            String             @db.VarChar(100)
+  unidad_medida     String             @db.VarChar(20)
+  categorias_bodega categorias_bodega  @relation(fields: [categoria_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lotes_inventario  lotes_inventario[]
+}
+
+model categorias_bodega {
+  id     Int      @id @default(autoincrement())
+  nombre String   @unique @db.VarChar(50)
+  bodega bodega[]
+}
+
+model especies {
+  id       Int        @id @default(autoincrement())
+  nombre   String     @unique @db.VarChar(50)
+  animales animales[]
+  razas    razas[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model eventos_sanitarios {
+  id                      Int       @id @default(autoincrement())
+  animal_id               Int
+  tipo_evento             String    @db.VarChar(30)
+  dosis_aplicada          Decimal?  @db.Decimal(6, 2)
+  descripcion_tratamiento String?
+  fecha_evento            DateTime? @default(dbgenerated("CURRENT_DATE")) @db.Date
+  animales                animales  @relation(fields: [animal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model lotes_animales {
+  id                   Int                   @id @default(autoincrement())
+  nombre               String                @db.VarChar(50)
+  potrero_id           Int?
+  animales             animales[]
+  ubicaciones_potreros ubicaciones_potreros? @relation(fields: [potrero_id], references: [id], onUpdate: NoAction)
+  produccion_huevos    produccion_huevos[]
+}
+
+model lotes_inventario {
+  id                  Int      @id @default(autoincrement())
+  insumo_id           Int
+  numero_lote         String?  @db.VarChar(50)
+  fecha_vencimiento   DateTime @db.Date
+  cantidad_disponible Decimal  @db.Decimal(10, 2)
+  costo_unitario      Decimal  @db.Decimal(10, 2)
+  bodega              bodega   @relation(fields: [insumo_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model produccion_huevos {
+  id             Int             @id @default(autoincrement())
+  lote_id        Int?
+  cantidad       Int
+  registrado_en  DateTime?       @default(now()) @db.Timestamp(6)
+  lotes_animales lotes_animales? @relation(fields: [lote_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model produccion_leche {
+  id            Int       @id @default(autoincrement())
+  animal_id     Int
+  litros        Decimal   @db.Decimal(5, 2)
+  jornada       String?   @db.VarChar(20)
+  registrado_en DateTime? @default(now()) @db.Timestamp(6)
+  animales      animales  @relation(fields: [animal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model razas {
+  id         Int        @id @default(autoincrement())
+  especie_id Int
+  nombre     String     @db.VarChar(50)
+  animales   animales[]
+  especies   especies   @relation(fields: [especie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model registros_peso {
+  id            Int       @id @default(autoincrement())
+  animal_id     Int
+  peso_kg       Decimal   @db.Decimal(6, 2)
+  registrado_en DateTime? @default(now()) @db.Timestamp(6)
+  animales      animales  @relation(fields: [animal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model reportes_finca {
+  id                Int       @id @default(autoincrement())
+  tipo_reporte      String    @db.VarChar(50)
+  filtros_aplicados Json?
+  generado_en       DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model roles {
+  id         Int        @id @default(autoincrement())
+  nombre_rol String     @unique @db.VarChar(50)
+  usuarios   usuarios[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model seguimiento_gestacion {
+  id                   Int       @id @default(autoincrement())
+  animal_id            Int
+  fecha_inseminacion   DateTime  @db.Date
+  fecha_estimada_parto DateTime  @db.Date
+  fecha_real_parto     DateTime? @db.Date
+  estado               String?   @default("Gestante") @db.VarChar(20)
+  notas                String?
+  animales             animales  @relation(fields: [animal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model ubicaciones_potreros {
+  id                 Int              @id @default(autoincrement())
+  nombre             String           @db.VarChar(50)
+  capacidad_animales Int?
+  estado             String?          @default("Disponible") @db.VarChar(20)
+  lotes_animales     lotes_animales[]
+}
+
+model usuarios {
+  id                 Int       @id @default(autoincrement())
+  nombre_usuario     String    @db.VarChar(100)
+  correo_electronico String    @unique @db.VarChar(100)
+  telefono           String?   @db.VarChar(20)
+  contrasena         String    @db.VarChar(255)
+  rol_id             Int
+  creado_en          DateTime? @default(now()) @db.Timestamp(6)
+  roles              roles     @relation(fields: [rol_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
