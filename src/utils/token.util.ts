@@ -18,6 +18,10 @@ export function generateRefreshToken(payload: TokenPayload): string {
   } as SignOptions);
 }
 
+export function verifyAccessToken(token: string): TokenPayload {
+  return jwt.verify(token, env.jwt.accessSecret) as TokenPayload;
+}
+
 export function verifyRefreshToken(token: string): TokenPayload {
   return jwt.verify(token, env.jwt.refreshSecret) as TokenPayload;
 }
