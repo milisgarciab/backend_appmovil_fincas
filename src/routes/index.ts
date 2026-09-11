@@ -8,6 +8,9 @@ import animalRoutes from './animal.routes';
 import reproduccionRoutes from './reproduccion.routes';
 import produccionLecheRoutes from './produccionLeche.routes';
 import produccionHuevosRoutes from './produccionHuevos.routes';
+import categoriaBodegaRoutes from './categoriaBodega.routes';
+import bodegaRoutes from './bodega.routes';
+import loteInventarioRoutes from './loteInventario.routes';
 
 const router = Router();
 
@@ -20,5 +23,8 @@ router.use('/animales', animalRoutes);
 router.use('/reproduccion', reproduccionRoutes);
 router.use('/produccion-leche', produccionLecheRoutes);
 router.use('/produccion-huevos', produccionHuevosRoutes);
+router.use('/categorias-bodega', categoriaBodegaRoutes);
+router.use('/bodega', bodegaRoutes);
+router.use('/lotes-inventario', loteInventarioRoutes);
 
 export default router;
