@@ -11,6 +11,8 @@ import produccionHuevosRoutes from './produccionHuevos.routes';
 import categoriaBodegaRoutes from './categoriaBodega.routes';
 import bodegaRoutes from './bodega.routes';
 import loteInventarioRoutes from './loteInventario.routes';
+import eventoSanitarioRoutes from './eventoSanitario.routes';
+import registroPesoRoutes from './registroPeso.routes';
 
 const router = Router();
 
@@ -26,5 +28,7 @@ router.use('/produccion-huevos', produccionHuevosRoutes);
 router.use('/categorias-bodega', categoriaBodegaRoutes);
 router.use('/bodega', bodegaRoutes);
 router.use('/lotes-inventario', loteInventarioRoutes);
+router.use('/eventos-sanitarios', eventoSanitarioRoutes);
+router.use('/registros-peso', registroPesoRoutes);
 
 export default router;
