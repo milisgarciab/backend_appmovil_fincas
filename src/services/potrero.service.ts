@@ -1,19 +1,15 @@
-// loteAnimal.service.ts
 import { Prisma } from '@prisma/client';
-import { LoteAnimalRepository } from '../repositories/loteAnimal.repository';
+import { PotreroRepository } from '../repositories/potrero.repository';
+import { ServiceError } from './loteAnimal.service';
 
-export class ServiceError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number,
-    public code: string,
-  ) {
-    super(message);
-  }
+export interface CrearPotreroInput {
+  nombre?: string;
+  capacidad_animales?: number;
+  estado?: string;
 }
 
-export class LoteAnimalService {
-  private repository = new LoteAnimalRepository();
+export class PotreroService {
+  private repository = new PotreroRepository();
 
   listAll() {
     return this.repository.findAll();
@@ -23,22 +19,26 @@ export class LoteAnimalService {
     return this.repository.findById(id);
   }
 
-  async create(input: { nombre?: string; potrero_id?: number }) {
+  async create(input: CrearPotreroInput) {
     if (!input.nombre) {
       throw new ServiceError('nombre es obligatorio', 400, 'VALIDATION_ERROR');
     }
 
     try {
-      return await this.repository.create({ nombre: input.nombre, potrero_id: input.potrero_id });
+      return await this.repository.create({
+        nombre: input.nombre,
+        capacidad_animales: input.capacidad_animales,
+        estado: input.estado,
+      });
     } catch (error) {
       throw this.mapPrismaError(error);
     }
   }
 
-  async update(id: number, input: { nombre?: string; potrero_id?: number }) {
+  async update(id: number, input: CrearPotreroInput) {
     const existente = await this.repository.findById(id);
     if (!existente) {
-      throw new ServiceError('Lote no encontrado', 404, 'NOT_FOUND');
+      throw new ServiceError('Potrero no encontrado', 404, 'NOT_FOUND');
     }
 
     try {
@@ -51,7 +51,7 @@ export class LoteAnimalService {
   async delete(id: number) {
     const existente = await this.repository.findById(id);
     if (!existente) {
-      throw new ServiceError('Lote no encontrado', 404, 'NOT_FOUND');
+      throw new ServiceError('Potrero no encontrado', 404, 'NOT_FOUND');
     }
 
     try {
@@ -61,27 +61,18 @@ export class LoteAnimalService {
     }
   }
 
-  async asignarPotrero(id: number, potreroId: number | null) {
+  async getAnimales(id: number) {
     const existente = await this.repository.findById(id);
     if (!existente) {
-      throw new ServiceError('Lote no encontrado', 404, 'NOT_FOUND');
+      throw new ServiceError('Potrero no encontrado', 404, 'NOT_FOUND');
     }
-
-    try {
-      return await this.repository.asignarPotrero(id, potreroId);
-    } catch (error) {
-      throw this.mapPrismaError(error);
-    }
+    return this.repository.findAnimalesDelPotrero(id);
   }
 
   private mapPrismaError(error: unknown): ServiceError {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2003') {
-        return new ServiceError(
-          'No se puede completar: potrero_id no existe, o hay animales asociados a este lote',
-          409,
-          'INVALID_OR_HAS_DEPENDENTS',
-        );
+        return new ServiceError('Hay lotes asociados a este potrero', 409, 'HAS_DEPENDENTS');
       }
     }
     console.error(error);

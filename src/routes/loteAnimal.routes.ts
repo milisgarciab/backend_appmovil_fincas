@@ -138,4 +138,38 @@ router.put('/:id', controller.update);
  */
 router.delete('/:id', controller.delete);
 
+/**
+ * @openapi
+ * /lotes-animales/{id}/potrero:
+ *   patch:
+ *     summary: Asigna o cambia el potrero de un lote
+ *     tags: [Lotes de animales]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               potrero_id: { type: string, nullable: true }
+ *     responses:
+ *       200:
+ *         description: Lote actualizado con su nuevo potrero
+ *       401:
+ *         description: Token de acceso requerido o inválido
+ *       404:
+ *         description: Lote no encontrado
+ *       409:
+ *         description: potrero_id no existe
+ */
+router.patch('/:id/potrero', controller.asignarPotrero);
+
 export default router;

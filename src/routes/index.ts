@@ -13,6 +13,7 @@ import bodegaRoutes from './bodega.routes';
 import loteInventarioRoutes from './loteInventario.routes';
 import eventoSanitarioRoutes from './eventoSanitario.routes';
 import registroPesoRoutes from './registroPeso.routes';
+import potreroRoutes from './potrero.routes';
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use('/bodega', bodegaRoutes);
 router.use('/lotes-inventario', loteInventarioRoutes);
 router.use('/eventos-sanitarios', eventoSanitarioRoutes);
 router.use('/registros-peso', registroPesoRoutes);
+router.use('/ubicaciones-potreros', potreroRoutes);
 
 export default router;
