@@ -65,6 +65,29 @@ router.get('/:id', controller.getById);
 
 /**
  * @openapi
+ * /animales/{id}/historial:
+ *   get:
+ *     summary: Historial unificado del animal (eventos sanitarios, producción de leche, registros de peso, seguimiento de gestación)
+ *     tags: [Animales]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: "Objeto { animal, historial: { eventosSanitarios, produccionLeche, registrosPeso, seguimientoGestacion, lineaDeTiempo } }"
+ *       401:
+ *         description: Token de acceso requerido o inválido
+ *       404:
+ *         description: Animal no encontrado
+ */
+router.get('/:id/historial', controller.getHistorial);
+
+/**
+ * @openapi
  * /animales:
  *   post:
  *     summary: Crea un animal

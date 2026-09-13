@@ -29,6 +29,10 @@ export class AnimalService {
     return this.repository.findById(id);
   }
 
+  getHistorial(id: number) {
+    return this.repository.findHistorial(id);
+  }
+
   async create(input: CrearAnimalInput) {
     this.validarCamposObligatorios(input);
     await this.validarEspecieExiste(input.especie_id);

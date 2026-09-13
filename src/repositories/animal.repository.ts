@@ -58,4 +58,50 @@ export class AnimalRepository {
     // DELETE real en base de datos — confirmado por el usuario, no soft delete.
     return prisma.animales.delete({ where: { id } });
   }
+
+  // Junta todos los eventos relacionados a un animal (HU-10: historial unificado)
+  async findHistorial(animalId: number) {
+    const [eventosSanitarios, produccionLeche, registrosPeso, seguimientoGestacion] = await Promise.all([
+      prisma.eventos_sanitarios.findMany({ where: { animal_id: animalId }, orderBy: { fecha_evento: 'desc' } }),
+      prisma.produccion_leche.findMany({ where: { animal_id: animalId }, orderBy: { registrado_en: 'desc' } }),
+      prisma.registros_peso.findMany({ where: { animal_id: animalId }, orderBy: { registrado_en: 'desc' } }),
+      prisma.seguimiento_gestacion.findMany({ where: { animal_id: animalId }, orderBy: { fecha_inseminacion: 'desc' } }),
+    ]);
+
+    // Línea de tiempo unificada, ordenada de más reciente a más antigua
+    const lineaDeTiempo = [
+      ...eventosSanitarios.map((e) => ({
+        tipo: 'evento_sanitario' as const,
+        fecha: e.fecha_evento,
+        detalle: e,
+      })),
+      ...produccionLeche.map((p) => ({
+        tipo: 'produccion_leche' as const,
+        fecha: p.registrado_en,
+        detalle: p,
+      })),
+      ...registrosPeso.map((r) => ({
+        tipo: 'registro_peso' as const,
+        fecha: r.registrado_en,
+        detalle: r,
+      })),
+      ...seguimientoGestacion.map((s) => ({
+        tipo: 'seguimiento_gestacion' as const,
+        fecha: s.fecha_inseminacion,
+        detalle: s,
+      })),
+    ].sort((a, b) => {
+      const fechaA = a.fecha ? new Date(a.fecha).getTime() : 0;
+      const fechaB = b.fecha ? new Date(b.fecha).getTime() : 0;
+      return fechaB - fechaA;
+    });
+
+    return {
+      eventosSanitarios,
+      produccionLeche,
+      registrosPeso,
+      seguimientoGestacion,
+      lineaDeTiempo,
+    };
+  }
 }

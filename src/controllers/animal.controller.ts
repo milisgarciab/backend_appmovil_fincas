@@ -24,6 +24,16 @@ export class AnimalController {
     res.json(animal);
   };
 
+  getHistorial = async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    const animal = await this.service.getById(id);
+    if (!animal) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Animal no encontrado' } });
+    }
+    const historial = await this.service.getHistorial(id);
+    res.json({ animal, historial });
+  };
+
   create = async (req: Request, res: Response) => {
     try {
       const animal = await this.service.create(req.body);
