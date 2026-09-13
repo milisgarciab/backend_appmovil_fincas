@@ -42,6 +42,9 @@ export class AnimalRepository {
   findByCodigo(codigo: string) {
     return prisma.animales.findUnique({ where: { codigo } });
   }
+    count() {
+    return prisma.animales.count();
+  }
 
   create(data: Prisma.animalesUncheckedCreateInput) {
     return prisma.animales.create({ data, include: INCLUDE_RELACIONES });
