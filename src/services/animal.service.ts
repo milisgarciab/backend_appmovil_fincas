@@ -2,7 +2,6 @@ import { AnimalRepository, AnimalFiltros } from '../repositories/animal.reposito
 import { EspecieRepository } from '../repositories/especie.repository';
 
 export interface CrearAnimalInput {
-  codigo: string;
   nombre?: string;
   genero: string;
   fecha_nacimiento?: string;
@@ -16,7 +15,7 @@ export interface CrearAnimalInput {
   padre_id?: number;
 }
 
-export type ActualizarAnimalInput = Partial<CrearAnimalInput>;
+export type ActualizarAnimalInput = Partial<CrearAnimalInput> & { codigo?: string };
 
 export class AnimalService {
   private repository = new AnimalRepository();
@@ -33,10 +32,11 @@ export class AnimalService {
   async create(input: CrearAnimalInput) {
     this.validarCamposObligatorios(input);
     await this.validarEspecieExiste(input.especie_id);
-    await this.validarCodigoDisponible(input.codigo);
+
+    const codigo = await this.generarCodigoUnico();
 
     return this.repository.create({
-      codigo: input.codigo.trim(),
+      codigo,
       nombre: input.nombre?.trim(),
       genero: input.genero.trim(),
       fecha_nacimiento: input.fecha_nacimiento ? new Date(input.fecha_nacimiento) : undefined,
@@ -71,9 +71,6 @@ export class AnimalService {
   }
 
   private validarCamposObligatorios(input: CrearAnimalInput) {
-    if (!input.codigo || input.codigo.trim().length === 0) {
-      throw new Error('El código del animal es obligatorio');
-    }
     if (!input.genero || input.genero.trim().length === 0) {
       throw new Error('El género del animal es obligatorio');
     }
@@ -97,5 +94,19 @@ export class AnimalService {
     if (existente && existente.id !== idAExcluir) {
       throw new Error(`Ya existe un animal con el código ${codigo}`);
     }
+  }
+
+  // Genera un código secuencial tipo ANI-0001. Si por una condición de carrera ya existe
+  // (dos creaciones casi simultáneas), reintenta con el siguiente número.
+  private async generarCodigoUnico(intentos = 5): Promise<string> {
+    const total = await this.repository.count();
+    for (let i = 0; i < intentos; i++) {
+      const candidato = `ANI-${String(total + 1 + i).padStart(4, '0')}`;
+      const existente = await this.repository.findByCodigo(candidato);
+      if (!existente) {
+        return candidato;
+      }
+    }
+    throw new Error('No se pudo generar un código único para el animal, intenta de nuevo');
   }
 }
