@@ -7,6 +7,12 @@ export interface AnimalFiltros {
   lote_id?: number;
   estado?: string;
   genero?: string;
+  busqueda?: string;
+}
+
+export interface PaginacionInput {
+  skip: number;
+  take: number;
 }
 
 const INCLUDE_RELACIONES = {
@@ -16,7 +22,7 @@ const INCLUDE_RELACIONES = {
 } satisfies Prisma.animalesInclude;
 
 export class AnimalRepository {
-  findAll(filtros: AnimalFiltros) {
+  private buildWhere(filtros: AnimalFiltros): Prisma.animalesWhereInput {
     const where: Prisma.animalesWhereInput = {
       especie_id: filtros.especie_id,
       raza_id: filtros.raza_id,
@@ -25,11 +31,31 @@ export class AnimalRepository {
       genero: filtros.genero,
     };
 
+    if (filtros.busqueda) {
+      where.OR = [
+        { nombre: { contains: filtros.busqueda, mode: 'insensitive' } },
+        { codigo: { contains: filtros.busqueda, mode: 'insensitive' } },
+      ];
+    }
+
+    return where;
+  }
+
+  findAll(filtros: AnimalFiltros, paginacion: PaginacionInput) {
+    const where = this.buildWhere(filtros);
+
     return prisma.animales.findMany({
       where,
       include: INCLUDE_RELACIONES,
       orderBy: { creado_en: 'desc' },
+      skip: paginacion.skip,
+      take: paginacion.take,
     });
+  }
+
+  count(filtros: AnimalFiltros) {
+    const where = this.buildWhere(filtros);
+    return prisma.animales.count({ where });
   }
 
   findById(id: number) {
@@ -41,9 +67,6 @@ export class AnimalRepository {
 
   findByCodigo(codigo: string) {
     return prisma.animales.findUnique({ where: { codigo } });
-  }
-    count() {
-    return prisma.animales.count();
   }
 
   create(data: Prisma.animalesUncheckedCreateInput) {
