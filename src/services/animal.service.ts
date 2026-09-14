@@ -8,6 +8,7 @@ export interface CrearAnimalInput {
   origen?: string;
   fecha_ingreso?: string;
   estado?: string;
+  causa_inactivacion?: string;
   especie_id: number;
   raza_id: number;
   lote_id?: number;
@@ -96,8 +97,6 @@ export class AnimalService {
     }
   }
 
-  // Genera un código secuencial tipo ANI-0001. Si por una condición de carrera ya existe
-  // (dos creaciones casi simultáneas), reintenta con el siguiente número.
   private async generarCodigoUnico(intentos = 5): Promise<string> {
     const total = await this.repository.count();
     for (let i = 0; i < intentos; i++) {

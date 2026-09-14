@@ -30,6 +30,10 @@ export class EventoSanitarioRepository {
     dosis_aplicada?: number;
     descripcion_tratamiento?: string;
     fecha_evento?: Date;
+    tipo_vacuna?: string;
+    responsable?: string;
+    diagnostico?: string;
+    estado?: string;
   }) {
     return prisma.eventos_sanitarios.create({ data });
   }
@@ -41,6 +45,10 @@ export class EventoSanitarioRepository {
       dosis_aplicada?: number;
       descripcion_tratamiento?: string;
       fecha_evento?: Date;
+      tipo_vacuna?: string;
+      responsable?: string;
+      diagnostico?: string;
+      estado?: string;
     },
   ) {
     return prisma.eventos_sanitarios.update({ where: { id }, data });

@@ -21,7 +21,7 @@ router.use(authenticate);
  *         schema: { type: string }
  *       - in: query
  *         name: tipo_evento
- *         schema: { type: string, enum: ["Vacunación", "Desparasitación", "Tratamiento Médico", "Cirugía", "Chequeo General"] }
+ *         schema: { type: string, enum: ["Vacunación", "Desparasitación", "Tratamiento Médico", "Cirugía", "Chequeo General", "Enfermedad", "Accidente", "Lesión"] }
  *     responses:
  *       200:
  *         description: Lista de eventos, incluyendo el animal relacionado
@@ -58,6 +58,10 @@ router.get('/:id', controller.getById);
  * /eventos-sanitarios:
  *   post:
  *     summary: Registra un evento sanitario
+ *     description: >
+ *       Si tipo_evento es "Vacunación", tipo_vacuna y responsable son obligatorios.
+ *       Si tipo_evento es "Enfermedad", "Accidente" o "Lesión", diagnostico y estado son obligatorios.
+ *       Si estado es "fallecido", el animal se marca automáticamente como "Muerto" con causa_inactivacion "muerte".
  *     tags: [Salud animal]
  *     security:
  *       - bearerAuth: []
@@ -70,10 +74,14 @@ router.get('/:id', controller.getById);
  *             required: [animal_id, tipo_evento]
  *             properties:
  *               animal_id: { type: string }
- *               tipo_evento: { type: string, enum: ["Vacunación", "Desparasitación", "Tratamiento Médico", "Cirugía", "Chequeo General"] }
+ *               tipo_evento: { type: string, enum: ["Vacunación", "Desparasitación", "Tratamiento Médico", "Cirugía", "Chequeo General", "Enfermedad", "Accidente", "Lesión"] }
  *               dosis_aplicada: { type: number }
  *               descripcion_tratamiento: { type: string }
- *               fecha_evento: { type: string, format: date, description: "Opcional, por defecto la fecha actual" }
+ *               fecha_evento: { type: string, format: date, description: "Opcional, por defecto la fecha actual. No puede ser una fecha futura." }
+ *               tipo_vacuna: { type: string, description: "Obligatorio si tipo_evento es Vacunación. Ej. Fiebre Aftosa, Brucelosis, Newcastle." }
+ *               responsable: { type: string, description: "Obligatorio si tipo_evento es Vacunación." }
+ *               diagnostico: { type: string, description: "Obligatorio si tipo_evento es Enfermedad, Accidente o Lesión." }
+ *               estado: { type: string, enum: ["en tratamiento", "recuperado", "fallecido"], description: "Obligatorio si tipo_evento es Enfermedad, Accidente o Lesión." }
  *     responses:
  *       201:
  *         description: Evento creado
@@ -89,6 +97,9 @@ router.post('/', controller.create);
  * /eventos-sanitarios/{id}:
  *   put:
  *     summary: Actualiza un evento sanitario
+ *     description: >
+ *       Las mismas reglas condicionales del POST aplican aquí. Si el estado cambia a "fallecido",
+ *       el animal se marca automáticamente como "Muerto" con causa_inactivacion "muerte".
  *     tags: [Salud animal]
  *     security:
  *       - bearerAuth: []
@@ -104,10 +115,14 @@ router.post('/', controller.create);
  *           schema:
  *             type: object
  *             properties:
- *               tipo_evento: { type: string, enum: ["Vacunación", "Desparasitación", "Tratamiento Médico", "Cirugía", "Chequeo General"] }
+ *               tipo_evento: { type: string, enum: ["Vacunación", "Desparasitación", "Tratamiento Médico", "Cirugía", "Chequeo General", "Enfermedad", "Accidente", "Lesión"] }
  *               dosis_aplicada: { type: number }
  *               descripcion_tratamiento: { type: string }
- *               fecha_evento: { type: string, format: date }
+ *               fecha_evento: { type: string, format: date, description: "No puede ser una fecha futura." }
+ *               tipo_vacuna: { type: string }
+ *               responsable: { type: string }
+ *               diagnostico: { type: string }
+ *               estado: { type: string, enum: ["en tratamiento", "recuperado", "fallecido"] }
  *     responses:
  *       200:
  *         description: Evento actualizado
