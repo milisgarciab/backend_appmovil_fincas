@@ -1,4 +1,3 @@
-import { Prisma } from '@prisma/client';
 import { prisma } from '../config/prisma';
 
 export class PotreroRepository {
@@ -10,11 +9,11 @@ export class PotreroRepository {
     return prisma.ubicaciones_potreros.findUnique({ where: { id } });
   }
 
-  create(data: Prisma.ubicaciones_potrerosUncheckedCreateInput) {
+  create(data: { nombre: string; capacidad_animales?: number; estado?: string }) {
     return prisma.ubicaciones_potreros.create({ data });
   }
 
-  update(id: number, data: Prisma.ubicaciones_potrerosUncheckedUpdateInput) {
+  update(id: number, data: { nombre?: string; capacidad_animales?: number; estado?: string }) {
     return prisma.ubicaciones_potreros.update({ where: { id }, data });
   }
 
@@ -22,12 +21,12 @@ export class PotreroRepository {
     return prisma.ubicaciones_potreros.delete({ where: { id } });
   }
 
-  // Animales cuyo lote pertenece a este potrero (potrero → lotes → animales)
+  // HU-29: ver los animales asignados directamente a un potrero.
   findAnimalesDelPotrero(potreroId: number) {
     return prisma.animales.findMany({
-      where: { lotes_animales: { potrero_id: potreroId } },
-      include: { especies: true, razas: true, lotes_animales: true },
-      orderBy: { creado_en: 'desc' },
+      where: { potrero_id: potreroId },
+      include: { especies: true, razas: true },
+      orderBy: { codigo: 'asc' },
     });
   }
 }

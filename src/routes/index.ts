@@ -14,6 +14,10 @@ import loteInventarioRoutes from './loteInventario.routes';
 import eventoSanitarioRoutes from './eventoSanitario.routes';
 import registroPesoRoutes from './registroPeso.routes';
 import potreroRoutes from './potrero.routes';
+import gastoRoutes from './gasto.routes';
+import ventaRoutes from './venta.routes';
+import precioMercadoRoutes from './precioMercado.routes';
+import balanceRoutes from './balance.routes';
 
 const router = Router();
 
@@ -32,5 +36,9 @@ router.use('/lotes-inventario', loteInventarioRoutes);
 router.use('/eventos-sanitarios', eventoSanitarioRoutes);
 router.use('/registros-peso', registroPesoRoutes);
 router.use('/ubicaciones-potreros', potreroRoutes);
+router.use('/gastos', gastoRoutes);
+router.use('/ventas', ventaRoutes);
+router.use('/precios-mercado', precioMercadoRoutes);
+router.use('/balance', balanceRoutes);
 
 export default router;

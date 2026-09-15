@@ -17,12 +17,39 @@ export interface CrearAnimalInput {
 
 export type ActualizarAnimalInput = Partial<CrearAnimalInput> & { codigo?: string };
 
+export interface ListaPaginada<T> {
+  data: T[];
+  paginacion: {
+    pagina: number;
+    limite: number;
+    total: number;
+    totalPaginas: number;
+  };
+}
+
 export class AnimalService {
   private repository = new AnimalRepository();
   private especieRepository = new EspecieRepository();
 
-  listAll(filtros: AnimalFiltros) {
-    return this.repository.findAll(filtros);
+  async listAll(filtros: AnimalFiltros, pagina = 1, limite = 20): Promise<ListaPaginada<Awaited<ReturnType<AnimalRepository['findAll']>>[number]>> {
+    const paginaSegura = pagina > 0 ? pagina : 1;
+    const limiteSeguro = limite > 0 && limite <= 100 ? limite : 20;
+    const skip = (paginaSegura - 1) * limiteSeguro;
+
+    const [data, total] = await Promise.all([
+      this.repository.findAll(filtros, { skip, take: limiteSeguro }),
+      this.repository.count(filtros),
+    ]);
+
+    return {
+      data,
+      paginacion: {
+        pagina: paginaSegura,
+        limite: limiteSeguro,
+        total,
+        totalPaginas: Math.max(1, Math.ceil(total / limiteSeguro)),
+      },
+    };
   }
 
   getById(id: number) {
@@ -99,7 +126,7 @@ export class AnimalService {
   // Genera un código secuencial tipo ANI-0001. Si por una condición de carrera ya existe
   // (dos creaciones casi simultáneas), reintenta con el siguiente número.
   private async generarCodigoUnico(intentos = 5): Promise<string> {
-    const total = await this.repository.count();
+    const total = await this.repository.count({});
     for (let i = 0; i < intentos; i++) {
       const candidato = `ANI-${String(total + 1 + i).padStart(4, '0')}`;
       const existente = await this.repository.findByCodigo(candidato);

@@ -9,21 +9,23 @@ router.use(authenticate);
 
 /**
  * @openapi
- * /ubicaciones-potreros:
+ * /potreros:
  *   get:
  *     summary: Lista todos los potreros
  *     tags: [Potreros]
  *     security:
  *       - bearerAuth: []
  *     responses:
- *       200: { description: Lista de potreros }
- *       401: { description: Token de acceso requerido o inválido }
+ *       200:
+ *         description: Lista de potreros
+ *       401:
+ *         description: Token de acceso requerido o inválido
  */
 router.get('/', controller.list);
 
 /**
  * @openapi
- * /ubicaciones-potreros/{id}:
+ * /potreros/{id}:
  *   get:
  *     summary: Obtiene un potrero por id
  *     tags: [Potreros]
@@ -35,17 +37,20 @@ router.get('/', controller.list);
  *         required: true
  *         schema: { type: string }
  *     responses:
- *       200: { description: Potrero encontrado }
- *       401: { description: Token de acceso requerido o inválido }
- *       404: { description: Potrero no encontrado }
+ *       200:
+ *         description: Potrero encontrado
+ *       401:
+ *         description: Token de acceso requerido o inválido
+ *       404:
+ *         description: Potrero no encontrado
  */
 router.get('/:id', controller.getById);
 
 /**
  * @openapi
- * /ubicaciones-potreros/{id}/animales:
+ * /potreros/{id}/animales:
  *   get:
- *     summary: Lista los animales cuyo lote pertenece a este potrero
+ *     summary: Lista los animales asignados directamente a este potrero
  *     tags: [Potreros]
  *     security:
  *       - bearerAuth: []
@@ -55,15 +60,18 @@ router.get('/:id', controller.getById);
  *         required: true
  *         schema: { type: string }
  *     responses:
- *       200: { description: Animales del potrero }
- *       401: { description: Token de acceso requerido o inválido }
- *       404: { description: Potrero no encontrado }
+ *       200:
+ *         description: Lista de animales del potrero
+ *       401:
+ *         description: Token de acceso requerido o inválido
+ *       404:
+ *         description: Potrero no encontrado
  */
 router.get('/:id/animales', controller.getAnimales);
 
 /**
  * @openapi
- * /ubicaciones-potreros:
+ * /potreros:
  *   post:
  *     summary: Crea un potrero
  *     tags: [Potreros]
@@ -79,17 +87,20 @@ router.get('/:id/animales', controller.getAnimales);
  *             properties:
  *               nombre: { type: string }
  *               capacidad_animales: { type: integer }
- *               estado: { type: string, description: "Default: Disponible" }
+ *               estado: { type: string, description: 'Por defecto "Disponible"' }
  *     responses:
- *       201: { description: Potrero creado }
- *       400: { description: nombre es obligatorio }
- *       401: { description: Token de acceso requerido o inválido }
+ *       201:
+ *         description: Potrero creado
+ *       400:
+ *         description: nombre es obligatorio
+ *       401:
+ *         description: Token de acceso requerido o inválido
  */
 router.post('/', controller.create);
 
 /**
  * @openapi
- * /ubicaciones-potreros/{id}:
+ * /potreros/{id}:
  *   put:
  *     summary: Actualiza un potrero
  *     tags: [Potreros]
@@ -111,15 +122,18 @@ router.post('/', controller.create);
  *               capacidad_animales: { type: integer }
  *               estado: { type: string }
  *     responses:
- *       200: { description: Potrero actualizado }
- *       401: { description: Token de acceso requerido o inválido }
- *       404: { description: Potrero no encontrado }
+ *       200:
+ *         description: Potrero actualizado
+ *       401:
+ *         description: Token de acceso requerido o inválido
+ *       404:
+ *         description: Potrero no encontrado
  */
 router.put('/:id', controller.update);
 
 /**
  * @openapi
- * /ubicaciones-potreros/{id}:
+ * /potreros/{id}:
  *   delete:
  *     summary: Elimina un potrero
  *     tags: [Potreros]
@@ -131,10 +145,14 @@ router.put('/:id', controller.update);
  *         required: true
  *         schema: { type: string }
  *     responses:
- *       204: { description: Potrero eliminado }
- *       401: { description: Token de acceso requerido o inválido }
- *       404: { description: Potrero no encontrado }
- *       409: { description: Hay lotes asociados a este potrero }
+ *       204:
+ *         description: Potrero eliminado
+ *       401:
+ *         description: Token de acceso requerido o inválido
+ *       404:
+ *         description: Potrero no encontrado
+ *       409:
+ *         description: Hay animales o lotes asignados a este potrero
  */
 router.delete('/:id', controller.delete);
 

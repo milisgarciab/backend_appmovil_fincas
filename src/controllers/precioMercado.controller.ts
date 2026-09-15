@@ -1,18 +1,16 @@
 import { Request, Response } from 'express';
-import { PotreroService, ServiceError } from '../services/potrero.service';
+import { PrecioMercadoService, ServiceError } from '../services/precioMercado.service';
 
-export class PotreroController {
-  private service = new PotreroService();
+export class PrecioMercadoController {
+  private service = new PrecioMercadoService();
 
   list = async (_req: Request, res: Response) => {
-    const potreros = await this.service.listAll();
-    res.json(potreros);
+    res.json(await this.service.listAll());
   };
 
   getById = async (req: Request, res: Response) => {
     try {
-      const potrero = await this.service.getById(Number(req.params.id));
-      res.json(potrero);
+      res.json(await this.service.getById(Number(req.params.id)));
     } catch (error) {
       this.handleError(error, res);
     }
@@ -20,8 +18,7 @@ export class PotreroController {
 
   create = async (req: Request, res: Response) => {
     try {
-      const potrero = await this.service.create(req.body);
-      res.status(201).json(potrero);
+      res.status(201).json(await this.service.create(req.body));
     } catch (error) {
       this.handleError(error, res);
     }
@@ -29,8 +26,7 @@ export class PotreroController {
 
   update = async (req: Request, res: Response) => {
     try {
-      const potrero = await this.service.update(Number(req.params.id), req.body);
-      res.json(potrero);
+      res.json(await this.service.update(Number(req.params.id), req.body));
     } catch (error) {
       this.handleError(error, res);
     }
@@ -40,15 +36,6 @@ export class PotreroController {
     try {
       await this.service.delete(Number(req.params.id));
       res.status(204).send();
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  };
-
-  getAnimales = async (req: Request, res: Response) => {
-    try {
-      const animales = await this.service.getAnimalesDelPotrero(Number(req.params.id));
-      res.json(animales);
     } catch (error) {
       this.handleError(error, res);
     }
