@@ -18,9 +18,12 @@ import gastoRoutes from './gasto.routes';
 import ventaRoutes from './venta.routes';
 import precioMercadoRoutes from './precioMercado.routes';
 import balanceRoutes from './balance.routes';
+import usuarioRoutes from './usuario.routes';
+// ...
+
 
 const router = Router();
-
+router.use('/users', usuarioRoutes);
 router.use(healthRoutes);
 router.use(authRoutes);
 router.use('/especies', especieRoutes);
