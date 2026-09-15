@@ -43,7 +43,17 @@ export class ProduccionLecheService {
     }
     return registro;
   }
-
+private validar(input: { litros?: number; registrado_en?: string }) {
+    if (input.litros !== undefined && input.litros < 0) {
+      throw new ServiceError('litros debe ser >= 0', 400, 'VALIDATION_ERROR');
+    }
+    if (input.registrado_en) {
+      const fecha = new Date(input.registrado_en);
+      if (fecha.getTime() > Date.now()) {
+        throw new ServiceError('registrado_en no puede ser una fecha futura', 400, 'VALIDATION_ERROR');
+      }
+    }
+  }
   async create(input: CrearProduccionLecheInput) {
     if (!input.animal_id || input.litros === undefined) {
       throw new ServiceError('animal_id y litros son obligatorios', 400, 'VALIDATION_ERROR');
@@ -51,6 +61,7 @@ export class ProduccionLecheService {
     if (input.jornada && !JORNADAS_VALIDAS.includes(input.jornada)) {
       throw new ServiceError('jornada debe ser "Mañana" o "Tarde"', 400, 'VALIDATION_ERROR');
     }
+this.validar(input);
 
     try {
       return await this.repository.create({
@@ -69,7 +80,7 @@ export class ProduccionLecheService {
     if (input.jornada && !JORNADAS_VALIDAS.includes(input.jornada)) {
       throw new ServiceError('jornada debe ser "Mañana" o "Tarde"', 400, 'VALIDATION_ERROR');
     }
-
+this.validar(input);
     try {
       return await this.repository.update(id, {
         litros: input.litros,
@@ -85,6 +96,7 @@ export class ProduccionLecheService {
     await this.getById(id);
     await this.repository.delete(id);
   }
+
 
   private mapPrismaError(error: unknown): ServiceError {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
