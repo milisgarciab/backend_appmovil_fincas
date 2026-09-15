@@ -9,6 +9,13 @@ export class PrecioMercadoRepository {
     return prisma.precios_mercado.findUnique({ where: { id } });
   }
 
+  findLatestByProducto(producto: string) {
+    return prisma.precios_mercado.findFirst({
+      where: { producto },
+      orderBy: { fecha: 'desc' },
+    });
+  }
+
   create(data: { producto: string; precio: number; fecha: Date }) {
     return prisma.precios_mercado.create({ data });
   }

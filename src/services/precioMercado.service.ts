@@ -1,4 +1,5 @@
 import { PrecioMercadoRepository } from '../repositories/precioMercado.repository';
+import { ProduccionHoyRepository } from '../repositories/produccionHoy.repository';
 
 export class ServiceError extends Error {
   constructor(message: string, public statusCode: number, public code: string) {
@@ -16,6 +17,7 @@ export type ActualizarPrecioMercadoInput = Partial<CrearPrecioMercadoInput>;
 
 export class PrecioMercadoService {
   private repository = new PrecioMercadoRepository();
+  private produccionHoyRepository = new ProduccionHoyRepository();
 
   listAll() {
     return this.repository.findAll();
@@ -55,5 +57,23 @@ export class PrecioMercadoService {
   async delete(id: number) {
     await this.getById(id);
     await this.repository.delete(id);
+  }
+
+  async getValorProduccionHoy() {
+    const [precioLeche, precioHuevos, produccion] = await Promise.all([
+      this.repository.findLatestByProducto('Leche'),
+      this.repository.findLatestByProducto('Huevos'),
+      this.produccionHoyRepository.getResumen(),
+    ]);
+
+    const valorLeche = Number(precioLeche?.precio ?? 0) * produccion.litrosLeche;
+    const valorHuevos = Number(precioHuevos?.precio ?? 0) * produccion.cantidadHuevos;
+
+    return {
+      ...produccion,
+      precioLeche: Number(precioLeche?.precio ?? 0),
+      precioHuevos: Number(precioHuevos?.precio ?? 0),
+      valorEstimadoHoy: valorLeche + valorHuevos,
+    };
   }
 }

@@ -38,6 +38,8 @@ model animales {
   registros_peso                             registros_peso[]
   seguimiento_gestacion                      seguimiento_gestacion[] @relation("GestacionAnimal")
   seguimiento_gestacion_como_macho           seguimiento_gestacion[] @relation("GestacionMacho")
+  observaciones                              String?
+  causa                                      sString?                 @db.VarChar(100)
 }
 
 model alimentacion {

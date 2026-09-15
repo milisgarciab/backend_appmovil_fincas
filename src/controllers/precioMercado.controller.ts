@@ -41,6 +41,10 @@ export class PrecioMercadoController {
     }
   };
 
+  getValorProduccion = async (_req: Request, res: Response) => {
+    res.json(await this.service.getValorProduccionHoy());
+  };
+
   private handleError(error: unknown, res: Response) {
     if (error instanceof ServiceError) {
       return res.status(error.statusCode).json({ error: { code: error.code, message: error.message } });
