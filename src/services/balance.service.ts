@@ -39,13 +39,13 @@ export class BalanceService {
     const fechaInicio = new Date(input.fecha_inicio);
     const fechaFin = new Date(input.fecha_fin);
 
-    const [ventasAgg, gastosAgg] = await Promise.all([
+    const [totalVentasRaw, totalGastosRaw] = await Promise.all([
       this.ventaRepository.sumByRango(fechaInicio, fechaFin),
       this.gastoRepository.sumByRango(fechaInicio, fechaFin),
     ]);
 
-    const totalVentas = Number(ventasAgg._sum.total ?? 0);
-    const totalGastos = Number(gastosAgg._sum.monto ?? 0);
+    const totalVentas = Number(totalVentasRaw);
+    const totalGastos = Number(totalGastosRaw);
     const balanceNeto = Number((totalVentas - totalGastos).toFixed(2));
 
     return this.repository.create({
@@ -59,13 +59,13 @@ export class BalanceService {
   async resumenRapido(rango: 'hoy' | 'semana' | 'mes' = 'hoy') {
     const { fechaInicio, fechaFin } = this.calcularRango(rango);
 
-    const [ventasAgg, gastosAgg] = await Promise.all([
+    const [totalIngresosRaw, totalGastosRaw] = await Promise.all([
       this.ventaRepository.sumByRango(fechaInicio, fechaFin),
       this.gastoRepository.sumByRango(fechaInicio, fechaFin),
     ]);
 
-    const totalIngresos = Number(ventasAgg._sum.total ?? 0);
-    const totalGastos = Number(gastosAgg._sum.monto ?? 0);
+    const totalIngresos = Number(totalIngresosRaw);
+    const totalGastos = Number(totalGastosRaw);
 
     return {
       rango,
