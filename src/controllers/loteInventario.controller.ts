@@ -1,20 +1,23 @@
 import { Request, Response } from 'express';
-import { LoteAnimalService, ServiceError } from '../services/loteAnimal.service';
+import { LoteInventarioService, ServiceError } from '../services/loteInventario.service';
 
-export class LoteAnimalController {
-  private service = new LoteAnimalService();
+export class LoteInventarioController {
+  private service = new LoteInventarioService();
 
-  list = async (_req: Request, res: Response) => {
-    const lotes = await this.service.listAll();
+  list = async (req: Request, res: Response) => {
+    const insumo_id = req.query.insumo_id ? Number(req.query.insumo_id) : undefined;
+    const proximosAVencer = req.query.vence_en_dias ? Number(req.query.vence_en_dias) : undefined;
+    const lotes = await this.service.listAll({ insumo_id, proximosAVencer });
     res.json(lotes);
   };
 
   getById = async (req: Request, res: Response) => {
-    const lote = await this.service.getById(Number(req.params.id));
-    if (!lote) {
-      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Lote no encontrado' } });
+    try {
+      const lote = await this.service.getById(Number(req.params.id));
+      res.json(lote);
+    } catch (error) {
+      this.handleError(error, res);
     }
-    res.json(lote);
   };
 
   create = async (req: Request, res: Response) => {
@@ -39,15 +42,6 @@ export class LoteAnimalController {
     try {
       await this.service.delete(Number(req.params.id));
       res.status(204).send();
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  };
-
-  asignarPotrero = async (req: Request, res: Response) => {
-    try {
-      const lote = await this.service.asignarPotrero(Number(req.params.id), req.body.potrero_id ?? null);
-      res.json(lote);
     } catch (error) {
       this.handleError(error, res);
     }

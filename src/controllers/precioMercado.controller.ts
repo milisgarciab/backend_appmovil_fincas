@@ -1,26 +1,24 @@
 import { Request, Response } from 'express';
-import { LoteAnimalService, ServiceError } from '../services/loteAnimal.service';
+import { PrecioMercadoService, ServiceError } from '../services/precioMercado.service';
 
-export class LoteAnimalController {
-  private service = new LoteAnimalService();
+export class PrecioMercadoController {
+  private service = new PrecioMercadoService();
 
   list = async (_req: Request, res: Response) => {
-    const lotes = await this.service.listAll();
-    res.json(lotes);
+    res.json(await this.service.listAll());
   };
 
   getById = async (req: Request, res: Response) => {
-    const lote = await this.service.getById(Number(req.params.id));
-    if (!lote) {
-      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Lote no encontrado' } });
+    try {
+      res.json(await this.service.getById(Number(req.params.id)));
+    } catch (error) {
+      this.handleError(error, res);
     }
-    res.json(lote);
   };
 
   create = async (req: Request, res: Response) => {
     try {
-      const lote = await this.service.create(req.body);
-      res.status(201).json(lote);
+      res.status(201).json(await this.service.create(req.body));
     } catch (error) {
       this.handleError(error, res);
     }
@@ -28,8 +26,7 @@ export class LoteAnimalController {
 
   update = async (req: Request, res: Response) => {
     try {
-      const lote = await this.service.update(Number(req.params.id), req.body);
-      res.json(lote);
+      res.json(await this.service.update(Number(req.params.id), req.body));
     } catch (error) {
       this.handleError(error, res);
     }
@@ -44,13 +41,8 @@ export class LoteAnimalController {
     }
   };
 
-  asignarPotrero = async (req: Request, res: Response) => {
-    try {
-      const lote = await this.service.asignarPotrero(Number(req.params.id), req.body.potrero_id ?? null);
-      res.json(lote);
-    } catch (error) {
-      this.handleError(error, res);
-    }
+  getValorProduccion = async (_req: Request, res: Response) => {
+    res.json(await this.service.getValorProduccionHoy());
   };
 
   private handleError(error: unknown, res: Response) {

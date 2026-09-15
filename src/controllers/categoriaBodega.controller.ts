@@ -1,26 +1,26 @@
 import { Request, Response } from 'express';
-import { LoteAnimalService, ServiceError } from '../services/loteAnimal.service';
+import { CategoriaBodegaService, ServiceError } from '../services/categoriaBodega.service';
 
-export class LoteAnimalController {
-  private service = new LoteAnimalService();
+export class CategoriaBodegaController {
+  private service = new CategoriaBodegaService();
 
   list = async (_req: Request, res: Response) => {
-    const lotes = await this.service.listAll();
-    res.json(lotes);
+    const categorias = await this.service.listAll();
+    res.json(categorias);
   };
 
   getById = async (req: Request, res: Response) => {
-    const lote = await this.service.getById(Number(req.params.id));
-    if (!lote) {
-      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Lote no encontrado' } });
+    const categoria = await this.service.getById(Number(req.params.id));
+    if (!categoria) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Categoría no encontrada' } });
     }
-    res.json(lote);
+    res.json(categoria);
   };
 
   create = async (req: Request, res: Response) => {
     try {
-      const lote = await this.service.create(req.body);
-      res.status(201).json(lote);
+      const categoria = await this.service.create(req.body);
+      res.status(201).json(categoria);
     } catch (error) {
       this.handleError(error, res);
     }
@@ -28,8 +28,8 @@ export class LoteAnimalController {
 
   update = async (req: Request, res: Response) => {
     try {
-      const lote = await this.service.update(Number(req.params.id), req.body);
-      res.json(lote);
+      const categoria = await this.service.update(Number(req.params.id), req.body);
+      res.json(categoria);
     } catch (error) {
       this.handleError(error, res);
     }
@@ -39,15 +39,6 @@ export class LoteAnimalController {
     try {
       await this.service.delete(Number(req.params.id));
       res.status(204).send();
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  };
-
-  asignarPotrero = async (req: Request, res: Response) => {
-    try {
-      const lote = await this.service.asignarPotrero(Number(req.params.id), req.body.potrero_id ?? null);
-      res.json(lote);
     } catch (error) {
       this.handleError(error, res);
     }

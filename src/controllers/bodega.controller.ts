@@ -1,26 +1,29 @@
 import { Request, Response } from 'express';
-import { LoteAnimalService, ServiceError } from '../services/loteAnimal.service';
+import { BodegaService, ServiceError } from '../services/bodega.service';
 
-export class LoteAnimalController {
-  private service = new LoteAnimalService();
+export class BodegaController {
+  private service = new BodegaService();
 
-  list = async (_req: Request, res: Response) => {
-    const lotes = await this.service.listAll();
-    res.json(lotes);
+  list = async (req: Request, res: Response) => {
+    const categoria_id = req.query.categoria_id ? Number(req.query.categoria_id) : undefined;
+    const stock_bajo = req.query.stock_bajo === 'true';
+    const insumos = await this.service.listAll({ categoria_id, stock_bajo });
+    res.json(insumos);
   };
 
   getById = async (req: Request, res: Response) => {
-    const lote = await this.service.getById(Number(req.params.id));
-    if (!lote) {
-      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Lote no encontrado' } });
+    try {
+      const insumo = await this.service.getById(Number(req.params.id));
+      res.json(insumo);
+    } catch (error) {
+      this.handleError(error, res);
     }
-    res.json(lote);
   };
 
   create = async (req: Request, res: Response) => {
     try {
-      const lote = await this.service.create(req.body);
-      res.status(201).json(lote);
+      const insumo = await this.service.create(req.body);
+      res.status(201).json(insumo);
     } catch (error) {
       this.handleError(error, res);
     }
@@ -28,8 +31,8 @@ export class LoteAnimalController {
 
   update = async (req: Request, res: Response) => {
     try {
-      const lote = await this.service.update(Number(req.params.id), req.body);
-      res.json(lote);
+      const insumo = await this.service.update(Number(req.params.id), req.body);
+      res.json(insumo);
     } catch (error) {
       this.handleError(error, res);
     }
@@ -44,10 +47,10 @@ export class LoteAnimalController {
     }
   };
 
-  asignarPotrero = async (req: Request, res: Response) => {
+  registrarMovimiento = async (req: Request, res: Response) => {
     try {
-      const lote = await this.service.asignarPotrero(Number(req.params.id), req.body.potrero_id ?? null);
-      res.json(lote);
+      const insumo = await this.service.registrarMovimiento(Number(req.params.id), req.body);
+      res.json(insumo);
     } catch (error) {
       this.handleError(error, res);
     }

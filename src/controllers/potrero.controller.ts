@@ -1,26 +1,27 @@
 import { Request, Response } from 'express';
-import { LoteAnimalService, ServiceError } from '../services/loteAnimal.service';
+import { PotreroService, ServiceError } from '../services/potrero.service';
 
-export class LoteAnimalController {
-  private service = new LoteAnimalService();
+export class PotreroController {
+  private service = new PotreroService();
 
   list = async (_req: Request, res: Response) => {
-    const lotes = await this.service.listAll();
-    res.json(lotes);
+    const potreros = await this.service.listAll();
+    res.json(potreros);
   };
 
   getById = async (req: Request, res: Response) => {
-    const lote = await this.service.getById(Number(req.params.id));
-    if (!lote) {
-      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Lote no encontrado' } });
+    try {
+      const potrero = await this.service.getById(Number(req.params.id));
+      res.json(potrero);
+    } catch (error) {
+      this.handleError(error, res);
     }
-    res.json(lote);
   };
 
   create = async (req: Request, res: Response) => {
     try {
-      const lote = await this.service.create(req.body);
-      res.status(201).json(lote);
+      const potrero = await this.service.create(req.body);
+      res.status(201).json(potrero);
     } catch (error) {
       this.handleError(error, res);
     }
@@ -28,8 +29,8 @@ export class LoteAnimalController {
 
   update = async (req: Request, res: Response) => {
     try {
-      const lote = await this.service.update(Number(req.params.id), req.body);
-      res.json(lote);
+      const potrero = await this.service.update(Number(req.params.id), req.body);
+      res.json(potrero);
     } catch (error) {
       this.handleError(error, res);
     }
@@ -44,10 +45,10 @@ export class LoteAnimalController {
     }
   };
 
-  asignarPotrero = async (req: Request, res: Response) => {
+  getAnimales = async (req: Request, res: Response) => {
     try {
-      const lote = await this.service.asignarPotrero(Number(req.params.id), req.body.potrero_id ?? null);
-      res.json(lote);
+      const animales = await this.service.getAnimalesDelPotrero(Number(req.params.id));
+      res.json(animales);
     } catch (error) {
       this.handleError(error, res);
     }
