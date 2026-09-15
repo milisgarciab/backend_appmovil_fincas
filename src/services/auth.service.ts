@@ -1,3 +1,4 @@
+﻿import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { UsuarioRepository } from '@repositories/usuario.repository';
 import { AppError } from '@middlewares/errorHandler';
@@ -9,8 +10,6 @@ import {
 } from '@utils/token.util';
 
 const SALT_ROUNDS = 10;
-// Rol por defecto al auto-registrarse (decisión confirmada): un Administrador puede
-// cambiarlo después. Corresponde a "Empleado" en la tabla roles.
 // Rol por defecto al auto-registrarse: id=2 corresponde a "Empleado" en la tabla roles.
 const ROL_EMPLEADO_ID = 2;
 
@@ -133,4 +132,37 @@ export class AuthService {
       rol_id: usuario.rol_id,
     };
   }
+}
+
+// ── HU-03: Recuperar contraseña ──────────────────────────────────────────────
+const _repo = new UsuarioRepository();
+
+export async function solicitarRecuperacion(email: string) {
+  const usuario = await _repo.findByEmail(email);
+  if (!usuario) return { mensaje: 'Si el correo existe, se generó un token de recuperación.' };
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expira = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+  await _repo.guardarResetToken(usuario.id, token, expira);
+
+  // Sin correo configurado → token en respuesta (MVP)
+  return { mensaje: 'Token de recuperación generado.', reset_token: token };
+}
+
+// ── HU-04: Cerrar sesión ──────────────────────────────────────────────────
+export async function logout(_usuarioId: number) {
+  // JWT es stateless: no hay tabla de sesiones que invalidar.
+  // El cliente debe descartar accessToken y refreshToken al recibir esta respuesta.
+  return { mensaje: 'Sesión cerrada correctamente.' };
+}
+
+export async function restablecerPassword(token: string, nuevaPassword: string) {
+  const usuario = await _repo.buscarPorResetToken(token);
+  if (!usuario) throw new Error('Token inválido o expirado');
+
+  const hash = await bcrypt.hash(nuevaPassword, SALT_ROUNDS);
+  await _repo.update(usuario.id, { contrasena: hash });
+  await _repo.limpiarResetToken(usuario.id);
+
+  return { mensaje: 'Contraseña actualizada correctamente.' };
 }
