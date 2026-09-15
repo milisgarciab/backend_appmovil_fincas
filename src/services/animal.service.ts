@@ -1,5 +1,6 @@
-import { AnimalRepository, AnimalFiltros } from '../repositories/animal.repository';
+﻿import { AnimalRepository, AnimalFiltros } from '../repositories/animal.repository';
 import { EspecieRepository } from '../repositories/especie.repository';
+import { RegistroPesoRepository } from '../repositories/registroPeso.repository';
 
 export interface CrearAnimalInput {
   nombre?: string;
@@ -11,11 +12,17 @@ export interface CrearAnimalInput {
   especie_id: number;
   raza_id: number;
   lote_id?: number;
+  potrero_id?: number;
   madre_id?: number;
   padre_id?: number;
 }
 
-export type ActualizarAnimalInput = Partial<CrearAnimalInput> & { codigo?: string };
+export type ActualizarAnimalInput = Partial<CrearAnimalInput> & {
+  codigo?: string;
+  observaciones?: string;
+  causa?: string;
+  peso?: number;
+};
 
 export interface ListaPaginada<T> {
   data: T[];
@@ -27,9 +34,12 @@ export interface ListaPaginada<T> {
   };
 }
 
+const ESTADOS_QUE_REQUIEREN_CAUSA = ['Muerto', 'Vendido'];
+
 export class AnimalService {
   private repository = new AnimalRepository();
   private especieRepository = new EspecieRepository();
+  private registroPesoRepository = new RegistroPesoRepository();
 
   async listAll(filtros: AnimalFiltros, pagina = 1, limite = 20): Promise<ListaPaginada<Awaited<ReturnType<AnimalRepository['findAll']>>[number]>> {
     const paginaSegura = pagina > 0 ? pagina : 1;
@@ -73,6 +83,7 @@ export class AnimalService {
       especie_id: input.especie_id,
       raza_id: input.raza_id,
       lote_id: input.lote_id,
+      potrero_id: input.potrero_id,
       madre_id: input.madre_id,
       padre_id: input.padre_id,
     });
@@ -85,12 +96,23 @@ export class AnimalService {
     if (input.codigo) {
       await this.validarCodigoDisponible(input.codigo, id);
     }
+    if (input.estado && ESTADOS_QUE_REQUIEREN_CAUSA.includes(input.estado) && !input.causa) {
+      throw new Error(`Debes indicar una causa al cambiar el estado a "${input.estado}"`);
+    }
 
-    return this.repository.update(id, {
-      ...input,
+    const { peso, ...datosAnimal } = input;
+
+    const animalActualizado = await this.repository.update(id, {
+      ...datosAnimal,
       fecha_nacimiento: input.fecha_nacimiento ? new Date(input.fecha_nacimiento) : undefined,
       fecha_ingreso: input.fecha_ingreso ? new Date(input.fecha_ingreso) : undefined,
     });
+
+    if (peso !== undefined) {
+      await this.registroPesoRepository.create({ animal_id: id, peso_kg: peso });
+    }
+
+    return animalActualizado;
   }
 
   delete(id: number) {
@@ -123,8 +145,6 @@ export class AnimalService {
     }
   }
 
-  // Genera un código secuencial tipo ANI-0001. Si por una condición de carrera ya existe
-  // (dos creaciones casi simultáneas), reintenta con el siguiente número.
   private async generarCodigoUnico(intentos = 5): Promise<string> {
     const total = await this.repository.count({});
     for (let i = 0; i < intentos; i++) {
