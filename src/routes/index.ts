@@ -19,10 +19,12 @@ import ventaRoutes from './venta.routes';
 import precioMercadoRoutes from './precioMercado.routes';
 import balanceRoutes from './balance.routes';
 import usuarioRoutes from './usuario.routes';
+import produccionRoutes from './produccion.routes';
+import paddockRoutes from './paddock.routes';
 // ...
-
-
 const router = Router();
+router.use('/production', produccionRoutes);
+router.use('/paddocks', paddockRoutes);
 router.use('/users', usuarioRoutes);
 router.use(healthRoutes);
 router.use(authRoutes);
