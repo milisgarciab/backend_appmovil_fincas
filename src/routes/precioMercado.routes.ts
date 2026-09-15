@@ -4,19 +4,56 @@ import { authenticate } from '../middlewares/authenticate';
 
 const router = Router();
 const controller = new PrecioMercadoController();
+
 router.use(authenticate);
 
 /**
  * @openapi
- * /market-prices:
+ * /precios-mercado:
  *   get:
- *     summary: Lista el historial de precios de mercado
+ *     summary: Lista todos los precios de mercado registrados
  *     tags: [Financiera]
  *     security: [{ bearerAuth: [] }]
  *     responses:
- *       200: { description: Historial de precios }
- *   put:
- *     summary: Registra un nuevo precio para un producto (Leche o Huevos)
+ *       200: { description: Lista de precios }
+ */
+router.get('/', controller.list);
+
+/**
+ * @openapi
+ * /precios-mercado/valor-produccion-hoy:
+ *   get:
+ *     summary: Valor estimado de la producción de hoy (leche + huevos a precio de mercado) - HU-34
+ *     tags: [Financiera]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Valor estimado de producción de hoy }
+ */
+router.get('/valor-produccion-hoy', controller.getValorProduccion);
+
+/**
+ * @openapi
+ * /precios-mercado/{id}:
+ *   get:
+ *     summary: Obtiene un precio de mercado por id
+ *     tags: [Financiera]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Precio encontrado }
+ *       404: { description: Precio no encontrado }
+ */
+router.get('/:id', controller.getById);
+
+/**
+ * @openapi
+ * /precios-mercado:
+ *   post:
+ *     summary: Registra manualmente un precio de mercado
  *     tags: [Financiera]
  *     security: [{ bearerAuth: [] }]
  *     requestBody:
@@ -25,15 +62,51 @@ router.use(authenticate);
  *         application/json:
  *           schema:
  *             type: object
- *             required: [producto, precio]
+ *             required: [producto, precio, fecha]
  *             properties:
- *               producto: { type: string, example: Leche }
+ *               producto: { type: string }
  *               precio: { type: number }
+ *               fecha: { type: string, format: date }
  *     responses:
- *       201: { description: Precio registrado }
+ *       201: { description: Precio creado }
  *       400: { description: Datos inválidos }
  */
-router.get('/', controller.getAll);
-router.put('/', controller.setPrecio);
+router.post('/', controller.create);
+
+/**
+ * @openapi
+ * /precios-mercado/{id}:
+ *   put:
+ *     summary: Actualiza un precio de mercado
+ *     tags: [Financiera]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Precio actualizado }
+ *       404: { description: Precio no encontrado }
+ */
+router.put('/:id', controller.update);
+
+/**
+ * @openapi
+ * /precios-mercado/{id}:
+ *   delete:
+ *     summary: Elimina un precio de mercado
+ *     tags: [Financiera]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       204: { description: Precio eliminado }
+ *       404: { description: Precio no encontrado }
+ */
+router.delete('/:id', controller.delete);
 
 export default router;
