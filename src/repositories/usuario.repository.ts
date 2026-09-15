@@ -10,7 +10,8 @@ export class UsuarioRepository {
   async findById(id: number): Promise<usuarios | null> {
     return prisma.usuarios.findUnique({ where: { id } });
   }
-    async update(id: number, data: Partial<{ nombre_usuario: string; contrasena: string }>): Promise<usuarios> {
+
+  async update(id: number, data: Partial<{ nombre_usuario: string; contrasena: string }>): Promise<usuarios> {
     return prisma.usuarios.update({ where: { id }, data });
   }
 
@@ -27,8 +28,8 @@ export class UsuarioRepository {
   }): Promise<usuarios> {
     return prisma.usuarios.create({ data });
   }
-<<<<<<< HEAD
-    async guardarResetToken(id: number, token: string, expira: Date): Promise<usuarios> {
+
+  async guardarResetToken(id: number, token: string, expira: Date): Promise<usuarios> {
     return prisma.usuarios.update({
       where: { id },
       data: { reset_token: token, reset_token_expira: expira },
@@ -50,6 +51,4 @@ export class UsuarioRepository {
       data: { reset_token: null, reset_token_expira: null },
     });
   }
-=======
->>>>>>> origin/develop
 }

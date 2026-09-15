@@ -206,11 +206,11 @@ model usuarios {
   telefono           String?   @db.VarChar(20)
   contrasena         String    @db.VarChar(255)
   rol_id             Int
-  estado             String    @default("Activo") @db.VarChar(20)
   creado_en          DateTime? @default(now()) @db.Timestamp(6)
+  estado             String?   @default("Activo") @db.VarChar(20)
+  reset_token        String?   @db.VarChar(255)
+  reset_token_expira DateTime? @db.Timestamp(6)
   roles              roles     @relation(fields: [rol_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  reset_token        String?   @unique
-  reset_token_expira DateTime?
 }
 
 model ventas {
