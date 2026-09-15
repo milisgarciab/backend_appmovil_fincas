@@ -7,6 +7,7 @@ export interface AnimalFiltros {
   lote_id?: number;
   estado?: string;
   genero?: string;
+  busqueda?: string;
 }
 
 const INCLUDE_RELACIONES = {
@@ -15,20 +16,33 @@ const INCLUDE_RELACIONES = {
   lotes_animales: true,
 } satisfies Prisma.animalesInclude;
 
-export class AnimalRepository {
-  findAll(filtros: AnimalFiltros) {
-    const where: Prisma.animalesWhereInput = {
-      especie_id: filtros.especie_id,
-      raza_id: filtros.raza_id,
-      lote_id: filtros.lote_id,
-      estado: filtros.estado,
-      genero: filtros.genero,
-    };
+function construirWhere(filtros: AnimalFiltros): Prisma.animalesWhereInput {
+  const where: Prisma.animalesWhereInput = {
+    especie_id: filtros.especie_id,
+    raza_id: filtros.raza_id,
+    lote_id: filtros.lote_id,
+    estado: filtros.estado,
+    genero: filtros.genero,
+  };
 
+  if (filtros.busqueda) {
+    where.OR = [
+      { nombre: { contains: filtros.busqueda, mode: 'insensitive' } },
+      { codigo: { contains: filtros.busqueda, mode: 'insensitive' } },
+    ];
+  }
+
+  return where;
+}
+
+export class AnimalRepository {
+  findAll(filtros: AnimalFiltros, paginacion?: { skip: number; take: number }) {
     return prisma.animales.findMany({
-      where,
+      where: construirWhere(filtros),
       include: INCLUDE_RELACIONES,
       orderBy: { creado_en: 'desc' },
+      skip: paginacion?.skip,
+      take: paginacion?.take,
     });
   }
 
@@ -42,8 +56,9 @@ export class AnimalRepository {
   findByCodigo(codigo: string) {
     return prisma.animales.findUnique({ where: { codigo } });
   }
-    count() {
-    return prisma.animales.count();
+
+  count(filtros: AnimalFiltros) {
+    return prisma.animales.count({ where: construirWhere(filtros) });
   }
 
   create(data: Prisma.animalesUncheckedCreateInput) {
@@ -55,11 +70,9 @@ export class AnimalRepository {
   }
 
   delete(id: number) {
-    // DELETE real en base de datos — confirmado por el usuario, no soft delete.
     return prisma.animales.delete({ where: { id } });
   }
 
-  // Junta todos los eventos relacionados a un animal (HU-10: historial unificado)
   async findHistorial(animalId: number) {
     const [eventosSanitarios, produccionLeche, registrosPeso, seguimientoGestacion] = await Promise.all([
       prisma.eventos_sanitarios.findMany({ where: { animal_id: animalId }, orderBy: { fecha_evento: 'desc' } }),
@@ -68,40 +81,17 @@ export class AnimalRepository {
       prisma.seguimiento_gestacion.findMany({ where: { animal_id: animalId }, orderBy: { fecha_inseminacion: 'desc' } }),
     ]);
 
-    // Línea de tiempo unificada, ordenada de más reciente a más antigua
     const lineaDeTiempo = [
-      ...eventosSanitarios.map((e) => ({
-        tipo: 'evento_sanitario' as const,
-        fecha: e.fecha_evento,
-        detalle: e,
-      })),
-      ...produccionLeche.map((p) => ({
-        tipo: 'produccion_leche' as const,
-        fecha: p.registrado_en,
-        detalle: p,
-      })),
-      ...registrosPeso.map((r) => ({
-        tipo: 'registro_peso' as const,
-        fecha: r.registrado_en,
-        detalle: r,
-      })),
-      ...seguimientoGestacion.map((s) => ({
-        tipo: 'seguimiento_gestacion' as const,
-        fecha: s.fecha_inseminacion,
-        detalle: s,
-      })),
+      ...eventosSanitarios.map((e) => ({ tipo: 'evento_sanitario' as const, fecha: e.fecha_evento, detalle: e })),
+      ...produccionLeche.map((p) => ({ tipo: 'produccion_leche' as const, fecha: p.registrado_en, detalle: p })),
+      ...registrosPeso.map((r) => ({ tipo: 'registro_peso' as const, fecha: r.registrado_en, detalle: r })),
+      ...seguimientoGestacion.map((s) => ({ tipo: 'seguimiento_gestacion' as const, fecha: s.fecha_inseminacion, detalle: s })),
     ].sort((a, b) => {
       const fechaA = a.fecha ? new Date(a.fecha).getTime() : 0;
       const fechaB = b.fecha ? new Date(b.fecha).getTime() : 0;
       return fechaB - fechaA;
     });
 
-    return {
-      eventosSanitarios,
-      produccionLeche,
-      registrosPeso,
-      seguimientoGestacion,
-      lineaDeTiempo,
-    };
+    return { eventosSanitarios, produccionLeche, registrosPeso, seguimientoGestacion, lineaDeTiempo };
   }
 }

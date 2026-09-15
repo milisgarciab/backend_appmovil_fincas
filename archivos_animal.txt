@@ -1,0 +1,396 @@
+﻿===== src\routes\animal.routes.ts =====
+
+import { Router } from 'express';
+import { AnimalController } from '../controllers/animal.controller';
+import { authenticate } from '../middlewares/authenticate';
+
+const router = Router();
+const controller = new AnimalController();
+
+router.use(authenticate);
+
+/**
+ * @openapi
+ * /animales:
+ *   get:
+ *     summary: Lista animales, paginado, con filtros opcionales y bÃºsqueda
+ *     tags: [Animales]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: especie_id
+ *         schema: { type: string }
+ *       - in: query
+ *         name: raza_id
+ *         schema: { type: string }
+ *       - in: query
+ *         name: lote_id
+ *         schema: { type: string }
+ *       - in: query
+ *         name: estado
+ *         schema: { type: string }
+ *         description: 'Por defecto solo devuelve estado="Activo". EnvÃ­a estado=Todos para ver todos los estados, u otro valor puntual (ej. Vendido, Muerto) para filtrar por ese.'
+ *       - in: query
+ *         name: genero
+ *         schema: { type: string }
+ *         description: "Valores esperados: Macho / Hembra (no validado estrictamente aÃºn)"
+ *       - in: query
+ *         name: buscar
+ *         schema: { type: string }
+ *         description: "Busca coincidencias parciales (sin distinguir mayÃºsculas) en nombre o codigo"
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *         description: "MÃ¡ximo 100"
+ *     responses:
+ *       200:
+ *         description: "Objeto { data: Animal[], paginacion: { pagina, limite, total, totalPaginas } }"
+ *       401:
+ *         description: Token de acceso requerido o invÃ¡lido
+ */
+router.get('/', controller.list);
+
+/**
+ * @openapi
+ * /animales/{id}:
+ *   get:
+ *     summary: Obtiene el detalle de un animal (con especie, raza y lote)
+ *     tags: [Animales]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Animal encontrado
+ *       401:
+ *         description: Token de acceso requerido o invÃ¡lido
+ *       404:
+ *         description: Animal no encontrado
+ */
+router.get('/:id', controller.getById);
+
+/**
+ * @openapi
+ * /animales:
+ *   post:
+ *     summary: Crea un animal (el codigo se autogenera, no se envÃ­a)
+ *     tags: [Animales]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [genero, especie_id, raza_id]
+ *             properties:
+ *               nombre: { type: string }
+ *               genero: { type: string, description: "Macho / Hembra (texto libre por ahora)" }
+ *               estado: { type: string }
+ *               fecha_nacimiento: { type: string, format: date }
+ *               especie_id: { type: string }
+ *               raza_id: { type: string }
+ *               lote_id: { type: string }
+ *               madre_id: { type: string }
+ *               padre_id: { type: string }
+ *     responses:
+ *       201:
+ *         description: Animal creado
+ *       400:
+ *         description: Datos invÃ¡lidos
+ *       401:
+ *         description: Token de acceso requerido o invÃ¡lido
+ */
+router.post('/', controller.create);
+
+/**
+ * @openapi
+ * /animales/{id}:
+ *   put:
+ *     summary: Actualiza un animal
+ *     tags: [Animales]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre: { type: string }
+ *               genero: { type: string }
+ *               estado: { type: string }
+ *               fecha_nacimiento: { type: string, format: date }
+ *               especie_id: { type: string }
+ *               raza_id: { type: string }
+ *               lote_id: { type: string }
+ *               madre_id: { type: string }
+ *               padre_id: { type: string }
+ *     responses:
+ *       200:
+ *         description: Animal actualizado
+ *       400:
+ *         description: Datos invÃ¡lidos
+ *       401:
+ *         description: Token de acceso requerido o invÃ¡lido
+ */
+router.put('/:id', controller.update);
+
+/**
+ * @openapi
+ * /animales/{id}:
+ *   delete:
+ *     summary: Elimina un animal (DELETE real en base de datos, sin soft delete)
+ *     tags: [Animales]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       204:
+ *         description: Animal eliminado
+ *       401:
+ *         description: Token de acceso requerido o invÃ¡lido
+ *       404:
+ *         description: Animal no encontrado
+ */
+router.delete('/:id', controller.delete);
+
+export default router;
+
+
+===== src\controllers\animal.controller.ts =====
+
+import { Request, Response } from 'express';
+import { AnimalService } from '../services/animal.service';
+
+export class AnimalController {
+  private service = new AnimalService();
+
+  list = async (req: Request, res: Response) => {
+    const { especie_id, raza_id, lote_id, estado, genero, buscar, page, limit } = req.query;
+
+    // Por defecto solo se listan animales Activos, salvo que se pida
+    // explÃ­citamente estado=Todos (para ver todos) u otro estado puntual.
+    let estadoFiltro: string | undefined;
+    if (!estado || estado === 'Todos') {
+      estadoFiltro = estado === 'Todos' ? undefined : 'Activo';
+    } else {
+      estadoFiltro = estado as string;
+    }
+
+    const resultado = await this.service.listAll(
+      {
+        especie_id: especie_id ? Number(especie_id) : undefined,
+        raza_id: raza_id ? Number(raza_id) : undefined,
+        lote_id: lote_id ? Number(lote_id) : undefined,
+        estado: estadoFiltro,
+        genero: genero as string | undefined,
+        busqueda: buscar as string | undefined,
+      },
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 20,
+    );
+    res.json(resultado);
+  };
+
+  getById = async (req: Request, res: Response) => {
+    const animal = await this.service.getById(Number(req.params.id));
+    if (!animal) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Animal no encontrado' } });
+    }
+    res.json(animal);
+  };
+
+  create = async (req: Request, res: Response) => {
+    try {
+      const animal = await this.service.create(req.body);
+      res.status(201).json(animal);
+    } catch (err) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: (err as Error).message } });
+    }
+  };
+
+  update = async (req: Request, res: Response) => {
+    try {
+      const animal = await this.service.update(Number(req.params.id), req.body);
+      res.json(animal);
+    } catch (err) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: (err as Error).message } });
+    }
+  };
+
+  delete = async (req: Request, res: Response) => {
+    try {
+      await this.service.delete(Number(req.params.id));
+      res.status(204).send();
+    } catch (err) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Animal no encontrado' } });
+    }
+  };
+}
+
+
+===== src\services\animal.service.ts =====
+
+import { AnimalRepository, AnimalFiltros } from '../repositories/animal.repository';
+import { EspecieRepository } from '../repositories/especie.repository';
+
+export interface CrearAnimalInput {
+  nombre?: string;
+  genero: string;
+  fecha_nacimiento?: string;
+  origen?: string;
+  fecha_ingreso?: string;
+  estado?: string;
+  especie_id: number;
+  raza_id: number;
+  lote_id?: number;
+  potrero_id?: number;
+  madre_id?: number;
+  padre_id?: number;
+}
+
+export type ActualizarAnimalInput = Partial<CrearAnimalInput> & { codigo?: string };
+
+export interface ListaPaginada<T> {
+  data: T[];
+  paginacion: {
+    pagina: number;
+    limite: number;
+    total: number;
+    totalPaginas: number;
+  };
+}
+
+export class AnimalService {
+  private repository = new AnimalRepository();
+  private especieRepository = new EspecieRepository();
+
+  async listAll(filtros: AnimalFiltros, pagina = 1, limite = 20): Promise<ListaPaginada<Awaited<ReturnType<AnimalRepository['findAll']>>[number]>> {
+    const paginaSegura = pagina > 0 ? pagina : 1;
+    const limiteSeguro = limite > 0 && limite <= 100 ? limite : 20;
+    const skip = (paginaSegura - 1) * limiteSeguro;
+
+    const [data, total] = await Promise.all([
+      this.repository.findAll(filtros, { skip, take: limiteSeguro }),
+      this.repository.count(filtros),
+    ]);
+
+    return {
+      data,
+      paginacion: {
+        pagina: paginaSegura,
+        limite: limiteSeguro,
+        total,
+        totalPaginas: Math.max(1, Math.ceil(total / limiteSeguro)),
+      },
+    };
+  }
+
+  getById(id: number) {
+    return this.repository.findById(id);
+  }
+
+  async create(input: CrearAnimalInput) {
+    this.validarCamposObligatorios(input);
+    await this.validarEspecieExiste(input.especie_id);
+
+    const codigo = await this.generarCodigoUnico();
+
+      return this.repository.create({
+      codigo,
+      nombre: input.nombre?.trim(),
+      genero: input.genero.trim(),
+      fecha_nacimiento: input.fecha_nacimiento ? new Date(input.fecha_nacimiento) : undefined,
+      origen: input.origen,
+      fecha_ingreso: input.fecha_ingreso ? new Date(input.fecha_ingreso) : undefined,
+      estado: input.estado,
+      especie_id: input.especie_id,
+      raza_id: input.raza_id,
+      lote_id: input.lote_id,
+      potrero_id: input.potrero_id,
+      madre_id: input.madre_id,
+      padre_id: input.padre_id,
+    });
+  }
+
+  async update(id: number, input: ActualizarAnimalInput) {
+    if (input.especie_id) {
+      await this.validarEspecieExiste(input.especie_id);
+    }
+    if (input.codigo) {
+      await this.validarCodigoDisponible(input.codigo, id);
+    }
+
+    return this.repository.update(id, {
+      ...input,
+      fecha_nacimiento: input.fecha_nacimiento ? new Date(input.fecha_nacimiento) : undefined,
+      fecha_ingreso: input.fecha_ingreso ? new Date(input.fecha_ingreso) : undefined,
+    });
+  }
+
+  delete(id: number) {
+    return this.repository.delete(id);
+  }
+
+  private validarCamposObligatorios(input: CrearAnimalInput) {
+    if (!input.genero || input.genero.trim().length === 0) {
+      throw new Error('El gÃ©nero del animal es obligatorio');
+    }
+    if (!input.especie_id) {
+      throw new Error('La especie del animal es obligatoria');
+    }
+    if (!input.raza_id) {
+      throw new Error('La raza del animal es obligatoria');
+    }
+  }
+
+  private async validarEspecieExiste(especieId: number) {
+    const especie = await this.especieRepository.findById(especieId);
+    if (!especie) {
+      throw new Error(`No existe una especie con id ${especieId}`);
+    }
+  }
+
+  private async validarCodigoDisponible(codigo: string, idAExcluir?: number) {
+    const existente = await this.repository.findByCodigo(codigo.trim());
+    if (existente && existente.id !== idAExcluir) {
+      throw new Error(`Ya existe un animal con el cÃ³digo ${codigo}`);
+    }
+  }
+
+  // Genera un cÃ³digo secuencial tipo ANI-0001. Si por una condiciÃ³n de carrera ya existe
+  // (dos creaciones casi simultÃ¡neas), reintenta con el siguiente nÃºmero.
+  private async generarCodigoUnico(intentos = 5): Promise<string> {
+    const total = await this.repository.count({});
+    for (let i = 0; i < intentos; i++) {
+      const candidato = `ANI-${String(total + 1 + i).padStart(4, '0')}`;
+      const existente = await this.repository.findByCodigo(candidato);
+      if (!existente) {
+        return candidato;
+      }
+    }
+    throw new Error('No se pudo generar un cÃ³digo Ãºnico para el animal, intenta de nuevo');
+  }
+}
+
+
