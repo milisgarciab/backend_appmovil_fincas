@@ -27,6 +27,7 @@ export class UsuarioRepository {
   }): Promise<usuarios> {
     return prisma.usuarios.create({ data });
   }
+<<<<<<< HEAD
     async guardarResetToken(id: number, token: string, expira: Date): Promise<usuarios> {
     return prisma.usuarios.update({
       where: { id },
@@ -49,4 +50,6 @@ export class UsuarioRepository {
       data: { reset_token: null, reset_token_expira: null },
     });
   }
+=======
+>>>>>>> origin/develop
 }
