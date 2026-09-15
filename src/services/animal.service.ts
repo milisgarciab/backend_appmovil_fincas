@@ -9,6 +9,7 @@ export interface CrearAnimalInput {
   origen?: string;
   fecha_ingreso?: string;
   estado?: string;
+  causa_inactivacion?: string;
   especie_id: number;
   raza_id: number;
   lote_id?: number;
@@ -35,6 +36,16 @@ export interface ListaPaginada<T> {
 }
 
 const ESTADOS_QUE_REQUIEREN_CAUSA = ['Muerto', 'Vendido'];
+
+export interface ListaPaginada<T> {
+  data: T[];
+  paginacion: {
+    pagina: number;
+    limite: number;
+    total: number;
+    totalPaginas: number;
+  };
+}
 
 export class AnimalService {
   private repository = new AnimalRepository();
