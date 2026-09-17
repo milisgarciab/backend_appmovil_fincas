@@ -11,7 +11,7 @@ import {
 
 const SALT_ROUNDS = 10;
 // Rol por defecto al auto-registrarse: id=2 corresponde a "Empleado" en la tabla roles.
-const ROL_EMPLEADO_ID = 2;
+const ROL_EMPLEADO_ID = 3;
 
 export interface RegisterInput {
   nombre_usuario?: string;

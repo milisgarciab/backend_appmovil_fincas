@@ -21,8 +21,10 @@ import balanceRoutes from './balance.routes';
 import usuarioRoutes from './usuario.routes';
 import produccionRoutes from './produccion.routes';
 import paddockRoutes from './paddock.routes';
+import alimentacionRoutes from './alimentacion.routes';
 // ...
 const router = Router();
+router.use('/alimentacion', alimentacionRoutes);
 router.use('/production', produccionRoutes);
 router.use('/paddocks', paddockRoutes);
 router.use('/users', usuarioRoutes);
