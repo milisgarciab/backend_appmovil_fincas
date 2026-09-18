@@ -3,6 +3,10 @@ import { usuarios } from '@prisma/client';
 
 // Capa de acceso a datos: aquí solo se habla con Prisma/la base de datos, nada de lógica de negocio.
 export class UsuarioRepository {
+  async findAll(): Promise<usuarios[]> {
+    return prisma.usuarios.findMany({ orderBy: { nombre_usuario: 'asc' } });
+  }
+
   async findByEmail(correo_electronico: string): Promise<usuarios | null> {
     return prisma.usuarios.findUnique({ where: { correo_electronico } });
   }
@@ -17,6 +21,10 @@ export class UsuarioRepository {
 
   async updateEstado(id: number, estado: string): Promise<usuarios> {
     return prisma.usuarios.update({ where: { id }, data: { estado } });
+  }
+
+  async updateRol(id: number, rol_id: number): Promise<usuarios> {
+    return prisma.usuarios.update({ where: { id }, data: { rol_id } });
   }
 
   async create(data: {
