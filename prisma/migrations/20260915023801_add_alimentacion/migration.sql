@@ -12,10 +12,36 @@ CREATE TABLE "animales" (
     "madre_id" INTEGER,
     "padre_id" INTEGER,
     "lote_id" INTEGER,
+    "potrero_id" INTEGER,
     "estado" VARCHAR(20) DEFAULT 'Activo',
     "creado_en" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "animales_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "alimentacion" (
+    "id" SERIAL NOT NULL,
+    "animal_id" INTEGER NOT NULL,
+    "tipo_alimento" VARCHAR(50) NOT NULL,
+    "cantidad" DECIMAL(8,2) NOT NULL,
+    "unidad" VARCHAR(20) NOT NULL,
+    "fecha" DATE NOT NULL DEFAULT CURRENT_DATE,
+    "creado_en" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "alimentacion_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "balance" (
+    "id" SERIAL NOT NULL,
+    "periodo" DATE NOT NULL,
+    "total_ventas" DECIMAL(10,2) NOT NULL,
+    "total_gastos" DECIMAL(10,2) NOT NULL,
+    "balance_neto" DECIMAL(10,2) NOT NULL,
+    "creado_en" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "balance_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -57,6 +83,18 @@ CREATE TABLE "eventos_sanitarios" (
 );
 
 -- CreateTable
+CREATE TABLE "gastos" (
+    "id" SERIAL NOT NULL,
+    "categoria" VARCHAR(30) NOT NULL,
+    "descripcion" TEXT,
+    "monto" DECIMAL(10,2) NOT NULL,
+    "fecha" DATE NOT NULL,
+    "creado_en" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "gastos_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "lotes_animales" (
     "id" SERIAL NOT NULL,
     "nombre" VARCHAR(50) NOT NULL,
@@ -75,6 +113,17 @@ CREATE TABLE "lotes_inventario" (
     "costo_unitario" DECIMAL(10,2) NOT NULL,
 
     CONSTRAINT "lotes_inventario_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "precios_mercado" (
+    "id" SERIAL NOT NULL,
+    "producto" VARCHAR(50) NOT NULL,
+    "precio" DECIMAL(10,2) NOT NULL,
+    "fecha" DATE NOT NULL,
+    "creado_en" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "precios_mercado_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -139,6 +188,8 @@ CREATE TABLE "roles" (
 CREATE TABLE "seguimiento_gestacion" (
     "id" SERIAL NOT NULL,
     "animal_id" INTEGER NOT NULL,
+    "macho_id" INTEGER,
+    "tipo" VARCHAR(20),
     "fecha_inseminacion" DATE NOT NULL,
     "fecha_estimada_parto" DATE NOT NULL,
     "fecha_real_parto" DATE,
@@ -171,6 +222,20 @@ CREATE TABLE "usuarios" (
     CONSTRAINT "usuarios_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "ventas" (
+    "id" SERIAL NOT NULL,
+    "producto" VARCHAR(50) NOT NULL,
+    "cantidad" DECIMAL(10,2) NOT NULL,
+    "precio_unitario" DECIMAL(10,2) NOT NULL,
+    "total" DECIMAL(10,2) NOT NULL,
+    "comprador" VARCHAR(100),
+    "fecha" DATE NOT NULL,
+    "creado_en" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ventas_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "animales_codigo_key" ON "animales"("codigo");
 
@@ -193,6 +258,9 @@ ALTER TABLE "animales" ADD CONSTRAINT "animales_especie_id_fkey" FOREIGN KEY ("e
 ALTER TABLE "animales" ADD CONSTRAINT "animales_lote_id_fkey" FOREIGN KEY ("lote_id") REFERENCES "lotes_animales"("id") ON DELETE SET NULL ON UPDATE NO ACTION;
 
 -- AddForeignKey
+ALTER TABLE "animales" ADD CONSTRAINT "animales_potrero_id_fkey" FOREIGN KEY ("potrero_id") REFERENCES "ubicaciones_potreros"("id") ON DELETE SET NULL ON UPDATE NO ACTION;
+
+-- AddForeignKey
 ALTER TABLE "animales" ADD CONSTRAINT "animales_madre_id_fkey" FOREIGN KEY ("madre_id") REFERENCES "animales"("id") ON DELETE SET NULL ON UPDATE NO ACTION;
 
 -- AddForeignKey
@@ -200,6 +268,9 @@ ALTER TABLE "animales" ADD CONSTRAINT "animales_padre_id_fkey" FOREIGN KEY ("pad
 
 -- AddForeignKey
 ALTER TABLE "animales" ADD CONSTRAINT "animales_raza_id_fkey" FOREIGN KEY ("raza_id") REFERENCES "razas"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "alimentacion" ADD CONSTRAINT "alimentacion_animal_id_fkey" FOREIGN KEY ("animal_id") REFERENCES "animales"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- AddForeignKey
 ALTER TABLE "bodega" ADD CONSTRAINT "bodega_categoria_id_fkey" FOREIGN KEY ("categoria_id") REFERENCES "categorias_bodega"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
@@ -227,6 +298,9 @@ ALTER TABLE "registros_peso" ADD CONSTRAINT "registros_peso_animal_id_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "seguimiento_gestacion" ADD CONSTRAINT "seguimiento_gestacion_animal_id_fkey" FOREIGN KEY ("animal_id") REFERENCES "animales"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "seguimiento_gestacion" ADD CONSTRAINT "seguimiento_gestacion_macho_id_fkey" FOREIGN KEY ("macho_id") REFERENCES "animales"("id") ON DELETE SET NULL ON UPDATE NO ACTION;
 
 -- AddForeignKey
 ALTER TABLE "usuarios" ADD CONSTRAINT "usuarios_rol_id_fkey" FOREIGN KEY ("rol_id") REFERENCES "roles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;

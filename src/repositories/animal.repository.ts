@@ -46,6 +46,10 @@ export class AnimalRepository {
     });
   }
 
+  count(filtros: AnimalFiltros) {
+    return prisma.animales.count({ where: construirWhere(filtros) });
+  }
+
   findById(id: number) {
     return prisma.animales.findUnique({
       where: { id },
@@ -55,10 +59,6 @@ export class AnimalRepository {
 
   findByCodigo(codigo: string) {
     return prisma.animales.findUnique({ where: { codigo } });
-  }
-
-  count(filtros: AnimalFiltros) {
-    return prisma.animales.count({ where: construirWhere(filtros) });
   }
 
   create(data: Prisma.animalesUncheckedCreateInput) {
