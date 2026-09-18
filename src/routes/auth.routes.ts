@@ -8,7 +8,7 @@ const authController = new AuthController();
  * @swagger
  * /auth/register:
  *   post:
- *     summary: Registra un nuevo usuario (queda con rol_id=3, Empleado, por defecto)
+ *     summary: Registra un nuevo usuario (queda con rol_id=2, Empleado, por defecto)
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -97,5 +97,55 @@ router.post('/auth/refresh', authController.refresh);
  *         description: Sesión cerrada
  */
 router.post('/auth/logout', authController.logout);
+
+/**
+ * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Solicita un token de recuperación de contraseña por correo (HU-03)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Token de recuperación generado (o mensaje genérico si el correo no existe)
+ *       400:
+ *         description: El email es obligatorio
+ */
+router.post('/auth/forgot-password', authController.forgotPassword);
+
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     summary: Restablece la contraseña usando el token de recuperación (HU-03)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, nueva_password]
+ *             properties:
+ *               token:
+ *                 type: string
+ *               nueva_password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada correctamente
+ *       400:
+ *         description: Datos faltantes, o token inválido/expirado
+ */
+router.post('/auth/reset-password', authController.resetPassword);
 
 export default router;

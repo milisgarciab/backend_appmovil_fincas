@@ -61,6 +61,19 @@ export class LoteAnimalService {
     }
   }
 
+  async asignarPotrero(id: number, potreroId: number | null) {
+    const existente = await this.repository.findById(id);
+    if (!existente) {
+      throw new ServiceError('Lote no encontrado', 404, 'NOT_FOUND');
+    }
+
+    try {
+      return await this.repository.asignarPotrero(id, potreroId);
+    } catch (error) {
+      throw this.mapPrismaError(error);
+    }
+  }
+
   private mapPrismaError(error: unknown): ServiceError {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2003') {

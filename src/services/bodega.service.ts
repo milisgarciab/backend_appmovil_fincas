@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { BodegaRepository, BodegaFiltros } from '../repositories/bodega.repository';
+import { MovimientoInventarioRepository } from '../repositories/movimientoInventario.repository';
 
 export class ServiceError extends Error {
   constructor(
@@ -38,6 +39,7 @@ export interface MovimientoInput {
 
 export class BodegaService {
   private repository = new BodegaRepository();
+  private movimientoInventarioRepository = new MovimientoInventarioRepository();
 
   listAll(filtros: BodegaFiltros) {
     return this.repository.findAll(filtros);
@@ -102,7 +104,8 @@ export class BodegaService {
     await this.repository.delete(id);
   }
 
-  // HU-17: registra entrada o salida de stock. La salida no puede dejar el stock en negativo.
+  // HU-17: registra entrada o salida de stock, y deja rastro en movimientos_inventario.
+  // La salida no puede dejar el stock en negativo.
   async registrarMovimiento(id: number, input: MovimientoInput) {
     const insumo = await this.getById(id);
 
@@ -123,13 +126,24 @@ export class BodegaService {
     }
 
     try {
-      return await this.repository.registrarMovimiento(id, cantidadConSigno);
+      const actualizado = await this.repository.registrarMovimiento(id, cantidadConSigno);
+      // Deja el rastro histórico del movimiento (no bloquea la respuesta si esto falla).
+      await this.movimientoInventarioRepository
+        .registrarSoloHistorial({
+          insumo_id: id,
+          tipo: input.tipo,
+          cantidad: input.cantidad,
+          motivo: input.motivo,
+        })
+        .catch((err) => console.error('No se pudo registrar el historial del movimiento:', err));
+      return actualizado;
     } catch (error) {
       // Colchón extra por si hay una condición de carrera entre el check y el update
       throw new ServiceError('El stock actual es insuficiente para esta salida', 400, 'STOCK_INSUFICIENTE');
     }
   }
-    // HU-18: insumos cuyo stock actual llegó o bajó del mínimo configurado.
+
+  // HU-18: insumos cuyo stock actual llegó o bajó del mínimo configurado.
   async alertasStockBajo() {
     const todos = await this.repository.findAll({});
     return todos.filter((insumo) => Number(insumo.stock_actual) <= Number(insumo.stock_minimo));
