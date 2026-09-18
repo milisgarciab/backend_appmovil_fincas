@@ -17,11 +17,13 @@ export class ServiceError extends Error {
 export interface CrearProduccionHuevosInput {
   lote_id?: number;
   cantidad?: number;
+  cantidad_rotos?: number;
   registrado_en?: string;
 }
 
 export interface ActualizarProduccionHuevosInput {
   cantidad?: number;
+  cantidad_rotos?: number;
   registrado_en?: string;
 }
 
@@ -40,15 +42,39 @@ export class ProduccionHuevosService {
     return registro;
   }
 
+  private validar(input: { cantidad?: number; cantidad_rotos?: number; registrado_en?: string }) {
+    if (input.cantidad !== undefined && input.cantidad < 0) {
+      throw new ServiceError('cantidad debe ser >= 0', 400, 'VALIDATION_ERROR');
+    }
+    if (input.cantidad_rotos !== undefined && input.cantidad_rotos < 0) {
+      throw new ServiceError('cantidad_rotos debe ser >= 0', 400, 'VALIDATION_ERROR');
+    }
+    if (
+      input.cantidad !== undefined &&
+      input.cantidad_rotos !== undefined &&
+      input.cantidad_rotos > input.cantidad
+    ) {
+      throw new ServiceError('cantidad_rotos no puede ser mayor que cantidad', 400, 'VALIDATION_ERROR');
+    }
+    if (input.registrado_en) {
+      const fecha = new Date(input.registrado_en);
+      if (fecha.getTime() > Date.now()) {
+        throw new ServiceError('registrado_en no puede ser una fecha futura', 400, 'VALIDATION_ERROR');
+      }
+    }
+  }
+
   async create(input: CrearProduccionHuevosInput) {
     if (input.cantidad === undefined) {
       throw new ServiceError('cantidad es obligatoria', 400, 'VALIDATION_ERROR');
     }
+    this.validar(input);
 
     try {
       return await this.repository.create({
         lote_id: input.lote_id,
         cantidad: input.cantidad,
+        cantidad_rotos: input.cantidad_rotos,
         registrado_en: input.registrado_en ? new Date(input.registrado_en) : undefined,
       });
     } catch (error) {
@@ -58,10 +84,12 @@ export class ProduccionHuevosService {
 
   async update(id: number, input: ActualizarProduccionHuevosInput) {
     await this.getById(id);
+    this.validar(input);
 
     try {
       return await this.repository.update(id, {
         cantidad: input.cantidad,
+        cantidad_rotos: input.cantidad_rotos,
         registrado_en: input.registrado_en ? new Date(input.registrado_en) : undefined,
       });
     } catch (error) {
