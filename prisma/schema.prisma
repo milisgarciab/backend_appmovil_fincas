@@ -134,6 +134,7 @@ model produccion_huevos {
   id             Int             @id @default(autoincrement())
   lote_id        Int?
   cantidad       Int
+  cantidad_rotos Int?            @default(0)
   registrado_en  DateTime?       @default(now()) @db.Timestamp(6)
   lotes_animales lotes_animales? @relation(fields: [lote_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
@@ -207,6 +208,9 @@ model usuarios {
   contrasena         String    @db.VarChar(255)
   rol_id             Int
   creado_en          DateTime? @default(now()) @db.Timestamp(6)
+  estado             String?   @default("Activo") @db.VarChar(20)
+  reset_token        String?   @db.VarChar(255)
+  reset_token_expira DateTime? @db.Timestamp(6)
   roles              roles     @relation(fields: [rol_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 

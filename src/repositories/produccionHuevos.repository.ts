@@ -51,9 +51,12 @@ export class ProduccionHuevosRepository {
       }),
     ]);
 
+    const totalCantidad = Number(totales._sum.cantidad ?? 0);
+    const totalRotos = Number(totales._sum.cantidad_rotos ?? 0);
+
     return {
-      totalBuenos: Number(totales._sum.cantidad ?? 0),
-      totalRotos: Number(totales._sum.cantidad_rotos ?? 0),
+      totalBuenos: totalCantidad - totalRotos,
+      totalRotos,
       registros,
     };
   }
