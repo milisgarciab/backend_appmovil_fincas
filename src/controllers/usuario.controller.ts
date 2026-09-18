@@ -7,6 +7,38 @@ const ROL_ADMINISTRADOR_ID = 1;
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService = new UsuarioService()) {}
 
+  list = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.status(200).json(await this.usuarioService.listAll());
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getById = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.status(200).json(await this.usuarioService.getById(Number(req.params.id)));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  crear = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.status(201).json(await this.usuarioService.crear(req.body));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  asignarRol = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.status(200).json(await this.usuarioService.asignarRol(Number(req.params.id), req.body?.rol_id));
+    } catch (error) {
+      next(error);
+    }
+  };
+
   actualizarPerfil = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const idSolicitado = Number(req.params.id);
