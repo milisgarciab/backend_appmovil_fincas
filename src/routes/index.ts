@@ -24,8 +24,10 @@ import paddockRoutes from './paddock.routes';
 import alimentacionRoutes from './alimentacion.routes';
 import indicadoresProduccionRoutes from './indicadoresProduccion.routes';
 import nacimientoRoutes from './nacimiento.routes';
+import movimientoInventarioRoutes from './movimientoInventario.routes';
 // ...
 const router = Router();
+router.use('/movimientos-inventario', movimientoInventarioRoutes);
 router.use('/nacimientos', nacimientoRoutes);
 router.use('/produccion', indicadoresProduccionRoutes);router.use('/produccion', indicadoresProduccionRoutes);
 router.use('/alimentacion', alimentacionRoutes);
