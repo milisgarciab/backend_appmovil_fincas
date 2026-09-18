@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+﻿import { Prisma } from '@prisma/client';
 import { BodegaRepository, BodegaFiltros } from '../repositories/bodega.repository';
 import { MovimientoInventarioRepository } from '../repositories/movimientoInventario.repository';
 
@@ -100,14 +100,13 @@ export class BodegaService {
 
   async delete(id: number) {
     await this.getById(id);
-    // Aviso: borrar el insumo borra en cascada todos sus lotes (lotes_inventario).
     await this.repository.delete(id);
   }
 
   // HU-17: registra entrada o salida de stock, y deja rastro en movimientos_inventario.
-  // La salida no puede dejar el stock en negativo.
+  // Todo ocurre en una sola transacción atómica (ver MovimientoInventarioRepository).
   async registrarMovimiento(id: number, input: MovimientoInput) {
-    const insumo = await this.getById(id);
+    await this.getById(id);
 
     if (!input.tipo || !['Entrada', 'Salida'].includes(input.tipo)) {
       throw new ServiceError('tipo debe ser "Entrada" o "Salida"', 400, 'VALIDATION_ERROR');
@@ -119,27 +118,18 @@ export class BodegaService {
       throw new ServiceError(`motivo debe ser una de: ${MOTIVOS_VALIDOS.join(', ')}`, 400, 'VALIDATION_ERROR');
     }
 
-    const cantidadConSigno = input.tipo === 'Entrada' ? input.cantidad : -input.cantidad;
-
-    if (input.tipo === 'Salida' && Number(insumo.stock_actual) < input.cantidad) {
-      throw new ServiceError('El stock actual es insuficiente para esta salida', 400, 'STOCK_INSUFICIENTE');
-    }
-
     try {
-      const actualizado = await this.repository.registrarMovimiento(id, cantidadConSigno);
-      // Deja el rastro histórico del movimiento (no bloquea la respuesta si esto falla).
-      await this.movimientoInventarioRepository
-        .registrarSoloHistorial({
-          insumo_id: id,
-          tipo: input.tipo,
-          cantidad: input.cantidad,
-          motivo: input.motivo,
-        })
-        .catch((err) => console.error('No se pudo registrar el historial del movimiento:', err));
-      return actualizado;
+      return await this.movimientoInventarioRepository.registrarMovimiento({
+        insumo_id: id,
+        tipo: input.tipo,
+        cantidad: input.cantidad,
+        motivo: input.motivo,
+      });
     } catch (error) {
-      // Colchón extra por si hay una condición de carrera entre el check y el update
-      throw new ServiceError('El stock actual es insuficiente para esta salida', 400, 'STOCK_INSUFICIENTE');
+      if (error instanceof Error && error.message === 'STOCK_INSUFICIENTE') {
+        throw new ServiceError('El stock actual es insuficiente para esta salida', 400, 'STOCK_INSUFICIENTE');
+      }
+      throw this.mapPrismaError(error);
     }
   }
 
