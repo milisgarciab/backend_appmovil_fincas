@@ -22,8 +22,10 @@ import usuarioRoutes from './usuario.routes';
 import produccionRoutes from './produccion.routes';
 import paddockRoutes from './paddock.routes';
 import alimentacionRoutes from './alimentacion.routes';
+import indicadoresProduccionRoutes from './indicadoresProduccion.routes';
 // ...
 const router = Router();
+router.use('/produccion', indicadoresProduccionRoutes);router.use('/produccion', indicadoresProduccionRoutes);
 router.use('/alimentacion', alimentacionRoutes);
 router.use('/production', produccionRoutes);
 router.use('/paddocks', paddockRoutes);
