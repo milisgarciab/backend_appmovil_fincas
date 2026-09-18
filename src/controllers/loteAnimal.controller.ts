@@ -44,6 +44,15 @@ export class LoteAnimalController {
     }
   };
 
+  asignarPotrero = async (req: Request, res: Response) => {
+    try {
+      const lote = await this.service.asignarPotrero(Number(req.params.id), req.body.potrero_id ?? null);
+      res.json(lote);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  };
+
   private handleError(error: unknown, res: Response) {
     if (error instanceof ServiceError) {
       return res.status(error.statusCode).json({ error: { code: error.code, message: error.message } });

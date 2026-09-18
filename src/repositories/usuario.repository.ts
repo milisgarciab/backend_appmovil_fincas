@@ -11,6 +11,14 @@ export class UsuarioRepository {
     return prisma.usuarios.findUnique({ where: { id } });
   }
 
+  async update(id: number, data: Partial<{ nombre_usuario: string; contrasena: string }>): Promise<usuarios> {
+    return prisma.usuarios.update({ where: { id }, data });
+  }
+
+  async updateEstado(id: number, estado: string): Promise<usuarios> {
+    return prisma.usuarios.update({ where: { id }, data: { estado } });
+  }
+
   async create(data: {
     nombre_usuario: string;
     correo_electronico: string;
@@ -19,5 +27,28 @@ export class UsuarioRepository {
     rol_id: number;
   }): Promise<usuarios> {
     return prisma.usuarios.create({ data });
+  }
+
+  async guardarResetToken(id: number, token: string, expira: Date): Promise<usuarios> {
+    return prisma.usuarios.update({
+      where: { id },
+      data: { reset_token: token, reset_token_expira: expira },
+    });
+  }
+
+  async buscarPorResetToken(token: string): Promise<usuarios | null> {
+    return prisma.usuarios.findFirst({
+      where: {
+        reset_token: token,
+        reset_token_expira: { gt: new Date() },
+      },
+    });
+  }
+
+  async limpiarResetToken(id: number): Promise<usuarios> {
+    return prisma.usuarios.update({
+      where: { id },
+      data: { reset_token: null, reset_token_expira: null },
+    });
   }
 }

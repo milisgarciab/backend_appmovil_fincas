@@ -31,6 +31,7 @@ export class ProduccionHuevosRepository {
   delete(id: number) {
     return prisma.produccion_huevos.delete({ where: { id } });
   }
+
   async resumenHoy() {
     const inicio = new Date();
     inicio.setHours(0, 0, 0, 0);
