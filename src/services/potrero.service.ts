@@ -60,9 +60,15 @@ export class PotreroService {
     }
   }
 
-  async getAnimalesDelPotrero(id: number) {
-    await this.getById(id);
-    return this.repository.findAnimalesDelPotrero(id);
+   async getAnimalesDelPotrero(id: number) {
+    const potrero = await this.getById(id);
+    const animales = await this.repository.findAnimalesDelPotrero(id);
+    return {
+      potrero: { id: potrero.id, nombre: potrero.nombre, estado: potrero.estado },
+      conteo: animales.length,
+      animales,
+      mensaje: animales.length === 0 ? 'Sin animales asignados' : null,
+    };
   }
 
   private mapPrismaError(error: unknown): ServiceError {
