@@ -26,8 +26,10 @@ import indicadoresProduccionRoutes from './indicadoresProduccion.routes';
 import nacimientoRoutes from './nacimiento.routes';
 import movimientoInventarioRoutes from './movimientoInventario.routes';
 import movimientoUbicacionRoutes from './movimientoUbicacion.routes';
+import auditoriaRoutes from './auditoria.routes';
 // ...
 const router = Router();
+router.use('/auditoria', auditoriaRoutes);
 router.use('/animales', movimientoUbicacionRoutes);
 router.use('/movimientos-inventario', movimientoInventarioRoutes);
 router.use('/nacimientos', nacimientoRoutes);
