@@ -1,5 +1,6 @@
-import { Prisma } from '@prisma/client';
+﻿import { Prisma } from '@prisma/client';
 import { BodegaRepository, BodegaFiltros } from '../repositories/bodega.repository';
+import { MovimientoInventarioRepository } from '../repositories/movimientoInventario.repository';
 
 export class ServiceError extends Error {
   constructor(
@@ -12,21 +13,33 @@ export class ServiceError extends Error {
 }
 
 const UNIDADES_VALIDAS = ['ml', 'Ltr', 'g', 'Kg', 'Dosis', 'Unidad', 'Bulto', 'Arroba'];
+const MOTIVOS_VALIDOS = ['Compra', 'Consumo', 'Merma'];
 
 export interface CrearBodegaInput {
   categoria_id?: number;
   nombre?: string;
   unidad_medida?: string;
+  stock_inicial?: number;
+  stock_minimo?: number;
 }
 
 export interface ActualizarBodegaInput {
   categoria_id?: number;
   nombre?: string;
   unidad_medida?: string;
+  stock_minimo?: number;
+}
+
+export interface MovimientoInput {
+  tipo?: 'Entrada' | 'Salida';
+  cantidad?: number;
+  motivo?: string;
+  fecha?: string;
 }
 
 export class BodegaService {
   private repository = new BodegaRepository();
+  private movimientoInventarioRepository = new MovimientoInventarioRepository();
 
   listAll(filtros: BodegaFiltros) {
     return this.repository.findAll(filtros);
@@ -51,12 +64,17 @@ export class BodegaService {
         'VALIDATION_ERROR',
       );
     }
+    if ((input.stock_inicial ?? 0) < 0 || (input.stock_minimo ?? 0) < 0) {
+      throw new ServiceError('stock_inicial y stock_minimo no pueden ser negativos', 400, 'VALIDATION_ERROR');
+    }
 
     try {
       return await this.repository.create({
         categoria_id: input.categoria_id,
         nombre: input.nombre,
         unidad_medida: input.unidad_medida,
+        stock_actual: input.stock_inicial ?? 0,
+        stock_minimo: input.stock_minimo ?? 0,
       });
     } catch (error) {
       throw this.mapPrismaError(error);
@@ -82,8 +100,43 @@ export class BodegaService {
 
   async delete(id: number) {
     await this.getById(id);
-    // Aviso: borrar el insumo borra en cascada todos sus lotes (lotes_inventario).
     await this.repository.delete(id);
+  }
+
+  // HU-17: registra entrada o salida de stock, y deja rastro en movimientos_inventario.
+  // Todo ocurre en una sola transacción atómica (ver MovimientoInventarioRepository).
+  async registrarMovimiento(id: number, input: MovimientoInput) {
+    await this.getById(id);
+
+    if (!input.tipo || !['Entrada', 'Salida'].includes(input.tipo)) {
+      throw new ServiceError('tipo debe ser "Entrada" o "Salida"', 400, 'VALIDATION_ERROR');
+    }
+    if (!input.cantidad || input.cantidad <= 0) {
+      throw new ServiceError('cantidad debe ser mayor a 0', 400, 'VALIDATION_ERROR');
+    }
+    if (!input.motivo || !MOTIVOS_VALIDOS.includes(input.motivo)) {
+      throw new ServiceError(`motivo debe ser una de: ${MOTIVOS_VALIDOS.join(', ')}`, 400, 'VALIDATION_ERROR');
+    }
+
+    try {
+      return await this.movimientoInventarioRepository.registrarMovimiento({
+        insumo_id: id,
+        tipo: input.tipo,
+        cantidad: input.cantidad,
+        motivo: input.motivo,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === 'STOCK_INSUFICIENTE') {
+        throw new ServiceError('El stock actual es insuficiente para esta salida', 400, 'STOCK_INSUFICIENTE');
+      }
+      throw this.mapPrismaError(error);
+    }
+  }
+
+  // HU-18: insumos cuyo stock actual llegó o bajó del mínimo configurado.
+  async alertasStockBajo() {
+    const todos = await this.repository.findAll({});
+    return todos.filter((insumo) => Number(insumo.stock_actual) <= Number(insumo.stock_minimo));
   }
 
   private mapPrismaError(error: unknown): ServiceError {

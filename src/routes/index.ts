@@ -18,9 +18,22 @@ import gastoRoutes from './gasto.routes';
 import ventaRoutes from './venta.routes';
 import precioMercadoRoutes from './precioMercado.routes';
 import balanceRoutes from './balance.routes';
-
+import usuarioRoutes from './usuario.routes';
+import produccionRoutes from './produccion.routes';
+import paddockRoutes from './paddock.routes';
+import alimentacionRoutes from './alimentacion.routes';
+import indicadoresProduccionRoutes from './indicadoresProduccion.routes';
+import nacimientoRoutes from './nacimiento.routes';
+import movimientoInventarioRoutes from './movimientoInventario.routes';
+// ...
 const router = Router();
-
+router.use('/movimientos-inventario', movimientoInventarioRoutes);
+router.use('/nacimientos', nacimientoRoutes);
+router.use('/produccion', indicadoresProduccionRoutes);router.use('/produccion', indicadoresProduccionRoutes);
+router.use('/alimentacion', alimentacionRoutes);
+router.use('/production', produccionRoutes);
+router.use('/paddocks', paddockRoutes);
+router.use('/users', usuarioRoutes);
 router.use(healthRoutes);
 router.use(authRoutes);
 router.use('/especies', especieRoutes);

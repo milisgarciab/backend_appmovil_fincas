@@ -12,7 +12,7 @@ export class SeguimientoGestacionRepository {
         animal_id: filtros.animal_id,
         estado: filtros.estado,
       },
-      include: { animales: true },
+      include: { animales: true, macho: true },
       orderBy: { fecha_inseminacion: 'desc' },
     });
   }
@@ -20,12 +20,14 @@ export class SeguimientoGestacionRepository {
   findById(id: number) {
     return prisma.seguimiento_gestacion.findUnique({
       where: { id },
-      include: { animales: true },
+      include: { animales: true, macho: true },
     });
   }
 
   create(data: {
     animal_id: number;
+    macho_id?: number;
+    tipo?: string;
     fecha_inseminacion: Date;
     fecha_estimada_parto: Date;
     estado?: string;
@@ -37,6 +39,8 @@ export class SeguimientoGestacionRepository {
   update(
     id: number,
     data: {
+      macho_id?: number;
+      tipo?: string;
       fecha_inseminacion?: Date;
       fecha_estimada_parto?: Date;
       fecha_real_parto?: Date;
