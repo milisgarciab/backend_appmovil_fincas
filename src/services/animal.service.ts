@@ -37,16 +37,6 @@ export interface ListaPaginada<T> {
 
 const ESTADOS_QUE_REQUIEREN_CAUSA = ['Muerto', 'Vendido'];
 
-export interface ListaPaginada<T> {
-  data: T[];
-  paginacion: {
-    pagina: number;
-    limite: number;
-    total: number;
-    totalPaginas: number;
-  };
-}
-
 export class AnimalService {
   private repository = new AnimalRepository();
   private especieRepository = new EspecieRepository();
@@ -75,6 +65,10 @@ export class AnimalService {
 
   getById(id: number) {
     return this.repository.findById(id);
+  }
+
+  getHistorial(id: number) {
+    return this.repository.findHistorial(id);
   }
 
   async create(input: CrearAnimalInput) {

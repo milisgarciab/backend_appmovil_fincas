@@ -2,6 +2,10 @@ import { Request, Response } from 'express';
 import { BodegaService, ServiceError } from '../services/bodega.service';
 
 export class BodegaController {
+    alertasStockBajo = async (req: Request, res: Response) => {
+    const insumos = await this.service.alertasStockBajo();
+    res.json(insumos);
+  };
   private service = new BodegaService();
 
   list = async (req: Request, res: Response) => {
