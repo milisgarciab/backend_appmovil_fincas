@@ -22,6 +22,8 @@ const TIPOS_EVENTO_VALIDOS = [
   'Chequeo General',
 ];
 
+const ESTADOS_VALIDOS = ['Abierto', 'En tratamiento', 'Resuelto'];
+
 export interface CrearEventoSanitarioInput {
   animal_id?: number;
   tipo_evento?: string;
@@ -97,6 +99,14 @@ export class EventoSanitarioService {
     } catch (error) {
       throw this.mapPrismaError(error);
     }
+  }
+
+  async cambiarEstado(id: number, estado?: string) {
+    await this.getById(id);
+    if (!estado || !ESTADOS_VALIDOS.includes(estado)) {
+      throw new ServiceError(`estado debe ser uno de: ${ESTADOS_VALIDOS.join(', ')}`, 400, 'VALIDATION_ERROR');
+    }
+    return this.repository.updateEstado(id, estado);
   }
 
   async delete(id: number) {

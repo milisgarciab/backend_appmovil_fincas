@@ -38,6 +38,15 @@ export class EventoSanitarioController {
     }
   };
 
+  cambiarEstado = async (req: Request, res: Response) => {
+    try {
+      const evento = await this.service.cambiarEstado(Number(req.params.id), req.body?.estado);
+      res.json(evento);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  };
+
   delete = async (req: Request, res: Response) => {
     try {
       await this.service.delete(Number(req.params.id));
