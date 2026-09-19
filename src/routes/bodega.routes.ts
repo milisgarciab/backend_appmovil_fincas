@@ -29,6 +29,19 @@ router.get('/', controller.list);
 
 /**
  * @openapi
+ * /bodega/alertas/stock-bajo:
+ *   get:
+ *     summary: Lista insumos con stock actual igual o menor al mínimo (HU-18)
+ *     tags: [Inventario]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Lista de insumos con stock bajo }
+ *       401: { description: Token de acceso requerido o inválido }
+ */
+router.get('/alertas/stock-bajo', controller.alertasStockBajo);
+
+/**
+ * @openapi
  * /bodega/{id}:
  *   get:
  *     summary: Obtiene un insumo de bodega por id

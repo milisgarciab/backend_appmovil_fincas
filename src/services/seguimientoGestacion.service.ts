@@ -110,7 +110,7 @@ export class SeguimientoGestacionService {
   }
 
   async update(id: number, input: ActualizarSeguimientoInput) {
-    await this.getById(id);
+    const registroActual = await this.getById(id);
     if (input.fecha_inseminacion) {
       this.validarFechaNoFutura(input.fecha_inseminacion);
     }
@@ -124,8 +124,9 @@ export class SeguimientoGestacionService {
       }
     }
 
+    let registro;
     try {
-      return await this.repository.update(id, {
+      registro = await this.repository.update(id, {
         macho_id: input.macho_id,
         tipo: input.tipo,
         fecha_inseminacion: input.fecha_inseminacion ? new Date(input.fecha_inseminacion) : undefined,
@@ -133,12 +134,19 @@ export class SeguimientoGestacionService {
           ? new Date(input.fecha_estimada_parto)
           : undefined,
         fecha_real_parto: input.fecha_real_parto ? new Date(input.fecha_real_parto) : undefined,
-        estado: input.estado,
+        estado: input.estado ?? (input.fecha_real_parto ? 'Parida' : undefined),
         notas: input.notas,
       });
     } catch (error) {
       throw this.mapPrismaError(error);
     }
+
+    // HU-15: al registrar fecha_real_parto, el animal deja de estar "En gestación".
+    if (input.fecha_real_parto) {
+      await this.animalService.update(registroActual.animal_id, { estado: 'Activo' });
+    }
+
+    return registro;
   }
 
   async delete(id: number) {
