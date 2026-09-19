@@ -29,6 +29,19 @@ router.get('/', controller.list);
 
 /**
  * @openapi
+ * /bodega/alertas/stock-bajo:
+ *   get:
+ *     summary: Lista insumos con stock actual igual o menor al mínimo (HU-18)
+ *     tags: [Inventario]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Lista de insumos con stock bajo }
+ *       401: { description: Token de acceso requerido o inválido }
+ */
+router.get('/alertas/stock-bajo', controller.alertasStockBajo);
+
+/**
+ * @openapi
  * /bodega/{id}:
  *   get:
  *     summary: Obtiene un insumo de bodega por id
@@ -134,5 +147,36 @@ router.put('/:id', controller.update);
  *         description: Insumo no encontrado
  */
 router.delete('/:id', controller.delete);
+
+/**
+ * @openapi
+ * /bodega/{id}/movimientos:
+ *   post:
+ *     summary: Registra una entrada o salida de stock para un insumo (HU-17)
+ *     tags: [Inventario]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [tipo, cantidad, motivo]
+ *             properties:
+ *               tipo: { type: string, enum: [Entrada, Salida] }
+ *               cantidad: { type: number }
+ *               motivo: { type: string, enum: [Compra, Consumo, Merma] }
+ *               fecha: { type: string, format: date }
+ *     responses:
+ *       200: { description: Insumo con el stock actualizado }
+ *       400: { description: Datos inválidos o stock insuficiente para la salida }
+ *       404: { description: Insumo no encontrado }
+ */
+router.post('/:id/movimientos', controller.registrarMovimiento);
 
 export default router;

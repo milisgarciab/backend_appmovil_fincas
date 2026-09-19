@@ -13,9 +13,31 @@ import bodegaRoutes from './bodega.routes';
 import loteInventarioRoutes from './loteInventario.routes';
 import eventoSanitarioRoutes from './eventoSanitario.routes';
 import registroPesoRoutes from './registroPeso.routes';
-
+import potreroRoutes from './potrero.routes';
+import gastoRoutes from './gasto.routes';
+import ventaRoutes from './venta.routes';
+import precioMercadoRoutes from './precioMercado.routes';
+import balanceRoutes from './balance.routes';
+import usuarioRoutes from './usuario.routes';
+import produccionRoutes from './produccion.routes';
+import paddockRoutes from './paddock.routes';
+import alimentacionRoutes from './alimentacion.routes';
+import indicadoresProduccionRoutes from './indicadoresProduccion.routes';
+import nacimientoRoutes from './nacimiento.routes';
+import movimientoInventarioRoutes from './movimientoInventario.routes';
+import movimientoUbicacionRoutes from './movimientoUbicacion.routes';
+import auditoriaRoutes from './auditoria.routes';
+// ...
 const router = Router();
-
+router.use('/auditoria', auditoriaRoutes);
+router.use('/animales', movimientoUbicacionRoutes);
+router.use('/movimientos-inventario', movimientoInventarioRoutes);
+router.use('/nacimientos', nacimientoRoutes);
+router.use('/produccion', indicadoresProduccionRoutes);
+router.use('/alimentacion', alimentacionRoutes);
+router.use('/produccion', produccionRoutes);
+router.use('/paddocks', paddockRoutes);
+router.use('/users', usuarioRoutes);
 router.use(healthRoutes);
 router.use(authRoutes);
 router.use('/especies', especieRoutes);
@@ -30,5 +52,10 @@ router.use('/bodega', bodegaRoutes);
 router.use('/lotes-inventario', loteInventarioRoutes);
 router.use('/eventos-sanitarios', eventoSanitarioRoutes);
 router.use('/registros-peso', registroPesoRoutes);
+router.use('/ubicaciones-potreros', potreroRoutes);
+router.use('/gastos', gastoRoutes);
+router.use('/ventas', ventaRoutes);
+router.use('/precios-mercado', precioMercadoRoutes);
+router.use('/balance', balanceRoutes);
 
 export default router;

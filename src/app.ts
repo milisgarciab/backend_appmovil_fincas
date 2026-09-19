@@ -6,6 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from '@config/swagger';
 import { errorHandler, notFoundHandler } from '@middlewares/errorHandler';
 import routes from '@routes/index';
+import { auditLog } from '@middlewares/auditLog';
 
 export function createApp() {
   const app = express();
@@ -20,6 +21,7 @@ export function createApp() {
   // JSON crudo del contrato OpenAPI: http://localhost:PORT/docs.json
   app.get('/docs.json', (_req, res) => res.json(swaggerSpec));
 
+  app.use(auditLog);
   app.use('/api', routes);
 
   app.use(notFoundHandler);

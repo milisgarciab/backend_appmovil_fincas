@@ -20,4 +20,8 @@ export class LoteAnimalRepository {
   delete(id: number) {
     return prisma.lotes_animales.delete({ where: { id } });
   }
+
+  asignarPotrero(id: number, potrero_id: number | null) {
+    return prisma.lotes_animales.update({ where: { id }, data: { potrero_id } });
+  }
 }

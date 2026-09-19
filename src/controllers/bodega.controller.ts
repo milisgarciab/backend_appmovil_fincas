@@ -2,11 +2,16 @@ import { Request, Response } from 'express';
 import { BodegaService, ServiceError } from '../services/bodega.service';
 
 export class BodegaController {
+    alertasStockBajo = async (req: Request, res: Response) => {
+    const insumos = await this.service.alertasStockBajo();
+    res.json(insumos);
+  };
   private service = new BodegaService();
 
   list = async (req: Request, res: Response) => {
     const categoria_id = req.query.categoria_id ? Number(req.query.categoria_id) : undefined;
-    const insumos = await this.service.listAll({ categoria_id });
+    const stock_bajo = req.query.stock_bajo === 'true';
+    const insumos = await this.service.listAll({ categoria_id, stock_bajo });
     res.json(insumos);
   };
 
@@ -41,6 +46,15 @@ export class BodegaController {
     try {
       await this.service.delete(Number(req.params.id));
       res.status(204).send();
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  };
+
+  registrarMovimiento = async (req: Request, res: Response) => {
+    try {
+      const insumo = await this.service.registrarMovimiento(Number(req.params.id), req.body);
+      res.json(insumo);
     } catch (error) {
       this.handleError(error, res);
     }
