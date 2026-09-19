@@ -38,6 +38,7 @@ model animales {
   registros_peso                             registros_peso[]
   seguimiento_gestacion                      seguimiento_gestacion[] @relation("GestacionAnimal")
   seguimiento_gestacion_como_macho           seguimiento_gestacion[] @relation("GestacionMacho")
+  movimientos_ubicacion                      movimientos_ubicacion[]
 }
 
 model alimentacion {
@@ -120,6 +121,15 @@ model lotes_inventario {
   cantidad_disponible Decimal  @db.Decimal(10, 2)
   costo_unitario      Decimal  @db.Decimal(10, 2)
   bodega              bodega   @relation(fields: [insumo_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model movimientos_ubicacion {
+  id                 Int       @id @default(autoincrement())
+  animal_id          Int
+  potrero_origen_id  Int?
+  potrero_destino_id Int?
+  fecha              DateTime  @default(now()) @db.Timestamp(6)
+  animales           animales  @relation(fields: [animal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model movimientos_inventario {
