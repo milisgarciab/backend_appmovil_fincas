@@ -46,6 +46,10 @@ export class EventoSanitarioRepository {
     return prisma.eventos_sanitarios.update({ where: { id }, data });
   }
 
+  updateEstado(id: number, estado: string) {
+    return prisma.eventos_sanitarios.update({ where: { id }, data: { estado } });
+  }
+
   delete(id: number) {
     return prisma.eventos_sanitarios.delete({ where: { id } });
   }

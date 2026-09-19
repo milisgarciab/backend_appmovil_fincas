@@ -120,6 +120,40 @@ router.put('/:id', controller.update);
 
 /**
  * @openapi
+ * /eventos-sanitarios/{id}/estado:
+ *   patch:
+ *     summary: Cambia el estado de seguimiento de un incidente de salud (Abierto, En tratamiento, Resuelto)
+ *     tags: [Salud animal]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [estado]
+ *             properties:
+ *               estado: { type: string, enum: ["Abierto", "En tratamiento", "Resuelto"] }
+ *     responses:
+ *       200:
+ *         description: Estado actualizado
+ *       400:
+ *         description: estado inválido
+ *       401:
+ *         description: Token de acceso requerido o inválido
+ *       404:
+ *         description: Evento no encontrado
+ */
+router.patch('/:id/estado', controller.cambiarEstado);
+
+/**
+ * @openapi
  * /eventos-sanitarios/{id}:
  *   delete:
  *     summary: Elimina un evento sanitario
