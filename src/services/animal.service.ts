@@ -1,4 +1,4 @@
-﻿import { AnimalRepository, AnimalFiltros } from '../repositories/animal.repository';
+import { AnimalRepository, AnimalFiltros } from '../repositories/animal.repository';
 import { EspecieRepository } from '../repositories/especie.repository';
 import { RegistroPesoRepository } from '../repositories/registroPeso.repository';
 
@@ -21,7 +21,6 @@ export interface CrearAnimalInput {
 export type ActualizarAnimalInput = Partial<CrearAnimalInput> & {
   codigo?: string;
   observaciones?: string;
-  causa?: string;
   peso?: number;
 };
 
@@ -34,8 +33,6 @@ export interface ListaPaginada<T> {
     totalPaginas: number;
   };
 }
-
-const ESTADOS_QUE_REQUIEREN_CAUSA = ['Muerto', 'Vendido'];
 
 export class AnimalService {
   private repository = new AnimalRepository();
@@ -101,11 +98,16 @@ export class AnimalService {
     if (input.codigo) {
       await this.validarCodigoDisponible(input.codigo, id);
     }
-    if (input.estado && ESTADOS_QUE_REQUIEREN_CAUSA.includes(input.estado) && !input.causa) {
-      throw new Error(`Debes indicar una causa al cambiar el estado a "${input.estado}"`);
-    }
 
     const { peso, ...datosAnimal } = input;
+
+    // Nota: la tabla `animales` no tiene ninguna columna para guardar una
+    // "causa" de inactivación/muerte/venta. Si en el futuro se agrega esa
+    // columna, aquí es donde se debe empezar a persistir; mientras tanto,
+    // por seguridad, se descarta cualquier campo `causa` que llegue en el
+    // body (por ejemplo de una versión vieja del cliente en caché) para
+    // que nunca rompa el `prisma.animales.update()`.
+    delete (datosAnimal as Record<string, unknown>).causa;
 
     const animalActualizado = await this.repository.update(id, {
       ...datosAnimal,
