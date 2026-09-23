@@ -53,7 +53,7 @@ export class BodegaController {
 
   registrarMovimiento = async (req: Request, res: Response) => {
     try {
-      const insumo = await this.service.registrarMovimiento(Number(req.params.id), req.body);
+      const insumo = await this.service.registrarMovimiento(Number(req.params.id), req.body, req.usuario?.id);
       res.json(insumo);
     } catch (error) {
       this.handleError(error, res);
