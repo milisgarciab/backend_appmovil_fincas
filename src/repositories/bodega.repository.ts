@@ -32,11 +32,11 @@ export class BodegaRepository {
     });
   }
 
-  create(data: { categoria_id: number; nombre: string; unidad_medida: string; stock_actual?: number; stock_minimo?: number }) {
+  create(data: { categoria_id: number; nombre: string; descripcion?: string; unidad_medida: string; stock_actual?: number; stock_minimo?: number }) {
     return prisma.bodega.create({ data });
   }
 
-  update(id: number, data: { categoria_id?: number; nombre?: string; unidad_medida?: string; stock_minimo?: number }) {
+  update(id: number, data: { categoria_id?: number; nombre?: string; descripcion?: string; unidad_medida?: string; stock_minimo?: number }) {
     return prisma.bodega.update({ where: { id }, data });
   }
 

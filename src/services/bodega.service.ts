@@ -18,6 +18,7 @@ const MOTIVOS_VALIDOS = ['Compra', 'Consumo', 'Merma'];
 export interface CrearBodegaInput {
   categoria_id?: number;
   nombre?: string;
+  descripcion?: string;
   unidad_medida?: string;
   stock_inicial?: number;
   stock_minimo?: number;
@@ -26,6 +27,7 @@ export interface CrearBodegaInput {
 export interface ActualizarBodegaInput {
   categoria_id?: number;
   nombre?: string;
+  descripcion?: string;
   unidad_medida?: string;
   stock_minimo?: number;
 }
@@ -72,6 +74,7 @@ export class BodegaService {
       return await this.repository.create({
         categoria_id: input.categoria_id,
         nombre: input.nombre,
+        descripcion: input.descripcion,
         unidad_medida: input.unidad_medida,
         stock_actual: input.stock_inicial ?? 0,
         stock_minimo: input.stock_minimo ?? 0,
@@ -105,7 +108,10 @@ export class BodegaService {
 
   // HU-17: registra entrada o salida de stock, y deja rastro en movimientos_inventario.
   // Todo ocurre en una sola transacción atómica (ver MovimientoInventarioRepository).
-  async registrarMovimiento(id: number, input: MovimientoInput) {
+  // usuarioId viene siempre de req.usuario.id (token de sesión), nunca del
+  // body: así el "responsable" del movimiento no se puede manipular desde
+  // el cliente.
+  async registrarMovimiento(id: number, input: MovimientoInput, usuarioId?: number) {
     await this.getById(id);
 
     if (!input.tipo || !['Entrada', 'Salida'].includes(input.tipo)) {
@@ -124,6 +130,7 @@ export class BodegaService {
         tipo: input.tipo,
         cantidad: input.cantidad,
         motivo: input.motivo,
+        usuario_id: usuarioId,
       });
     } catch (error) {
       if (error instanceof Error && error.message === 'STOCK_INSUFICIENTE') {

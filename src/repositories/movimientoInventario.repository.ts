@@ -9,7 +9,7 @@ export class MovimientoInventarioRepository {
   findAll(filtros: MovimientoFiltros) {
     return prisma.movimientos_inventario.findMany({
       where: { insumo_id: filtros.insumo_id, tipo: filtros.tipo },
-      include: { bodega: true },
+      include: { bodega: true, usuarios: { select: { nombre_usuario: true } } },
       orderBy: { fecha: 'desc' },
     });
   }
@@ -18,7 +18,13 @@ export class MovimientoInventarioRepository {
     return prisma.bodega.findUnique({ where: { id: insumoId } });
   }
 
-  async registrarMovimiento(data: { insumo_id: number; tipo: string; cantidad: number; motivo?: string }) {
+  async registrarMovimiento(data: {
+    insumo_id: number;
+    tipo: string;
+    cantidad: number;
+    motivo?: string;
+    usuario_id?: number;
+  }) {
     return prisma.$transaction(async (tx) => {
       const insumo = await tx.bodega.findUnique({ where: { id: data.insumo_id } });
       if (!insumo) {
@@ -51,7 +57,9 @@ export class MovimientoInventarioRepository {
           tipo: data.tipo,
           cantidad: data.cantidad,
           motivo: data.motivo,
+          usuario_id: data.usuario_id,
         },
+        include: { usuarios: { select: { nombre_usuario: true } }, bodega: true },
       });
     });
   }
