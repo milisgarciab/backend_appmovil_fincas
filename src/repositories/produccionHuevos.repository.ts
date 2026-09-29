@@ -1,14 +1,15 @@
-﻿import { prisma } from '../config/prisma';
+import { prisma } from '../config/prisma';
 
 export interface ProduccionHuevosFiltros {
   lote_id?: number;
+  animal_id?: number;
 }
 
 export class ProduccionHuevosRepository {
   findAll(filtros: ProduccionHuevosFiltros) {
     return prisma.produccion_huevos.findMany({
-      where: { lote_id: filtros.lote_id },
-      include: { lotes_animales: true },
+      where: { lote_id: filtros.lote_id, animal_id: filtros.animal_id },
+      include: { lotes_animales: true, animales: true },
       orderBy: { registrado_en: 'desc' },
     });
   }
@@ -16,15 +17,25 @@ export class ProduccionHuevosRepository {
   findById(id: number) {
     return prisma.produccion_huevos.findUnique({
       where: { id },
-      include: { lotes_animales: true },
+      include: { lotes_animales: true, animales: true },
     });
   }
 
-  create(data: { lote_id?: number; cantidad: number; cantidad_rotos?: number; registrado_en?: Date }) {
+  create(data: {
+    lote_id?: number;
+    animal_id?: number;
+    cantidad: number;
+    cantidad_rotos?: number;
+    observaciones?: string;
+    registrado_en?: Date;
+  }) {
     return prisma.produccion_huevos.create({ data });
   }
 
-  update(id: number, data: { cantidad?: number; cantidad_rotos?: number; registrado_en?: Date }) {
+  update(
+    id: number,
+    data: { cantidad?: number; cantidad_rotos?: number; observaciones?: string; registrado_en?: Date },
+  ) {
     return prisma.produccion_huevos.update({ where: { id }, data });
   }
 
@@ -46,7 +57,7 @@ export class ProduccionHuevosRepository {
       }),
       prisma.produccion_huevos.findMany({
         where,
-        include: { lotes_animales: true },
+        include: { lotes_animales: true, animales: true },
         orderBy: { registrado_en: 'desc' },
       }),
     ]);

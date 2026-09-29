@@ -16,14 +16,17 @@ export class ServiceError extends Error {
 
 export interface CrearProduccionHuevosInput {
   lote_id?: number;
+  animal_id?: number;
   cantidad?: number;
   cantidad_rotos?: number;
+  observaciones?: string;
   registrado_en?: string;
 }
 
 export interface ActualizarProduccionHuevosInput {
   cantidad?: number;
   cantidad_rotos?: number;
+  observaciones?: string;
   registrado_en?: string;
 }
 
@@ -42,7 +45,12 @@ export class ProduccionHuevosService {
     return registro;
   }
 
-  private validar(input: { cantidad?: number; cantidad_rotos?: number; registrado_en?: string }) {
+  private validar(input: {
+    cantidad?: number;
+    cantidad_rotos?: number;
+    observaciones?: string;
+    registrado_en?: string;
+  }) {
     if (input.cantidad !== undefined && input.cantidad < 0) {
       throw new ServiceError('cantidad debe ser >= 0', 400, 'VALIDATION_ERROR');
     }
@@ -56,6 +64,9 @@ export class ProduccionHuevosService {
     ) {
       throw new ServiceError('cantidad_rotos no puede ser mayor que cantidad', 400, 'VALIDATION_ERROR');
     }
+    if (input.observaciones !== undefined && input.observaciones.length > 255) {
+      throw new ServiceError('observaciones no puede superar 255 caracteres', 400, 'VALIDATION_ERROR');
+    }
     if (input.registrado_en) {
       const fecha = new Date(input.registrado_en);
       if (fecha.getTime() > Date.now()) {
@@ -68,13 +79,18 @@ export class ProduccionHuevosService {
     if (input.cantidad === undefined) {
       throw new ServiceError('cantidad es obligatoria', 400, 'VALIDATION_ERROR');
     }
+    if (input.animal_id && input.lote_id) {
+      throw new ServiceError('no se puede indicar animal_id y lote_id al mismo tiempo', 400, 'VALIDATION_ERROR');
+    }
     this.validar(input);
 
     try {
       return await this.repository.create({
         lote_id: input.lote_id,
+        animal_id: input.animal_id,
         cantidad: input.cantidad,
         cantidad_rotos: input.cantidad_rotos,
+        observaciones: input.observaciones,
         registrado_en: input.registrado_en ? new Date(input.registrado_en) : undefined,
       });
     } catch (error) {
@@ -90,6 +106,7 @@ export class ProduccionHuevosService {
       return await this.repository.update(id, {
         cantidad: input.cantidad,
         cantidad_rotos: input.cantidad_rotos,
+        observaciones: input.observaciones,
         registrado_en: input.registrado_en ? new Date(input.registrado_en) : undefined,
       });
     } catch (error) {
@@ -104,7 +121,7 @@ export class ProduccionHuevosService {
 
   private mapPrismaError(error: unknown): ServiceError {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
-      return new ServiceError('lote_id no existe', 400, 'INVALID_REFERENCE');
+      return new ServiceError('lote_id o animal_id no existe', 400, 'INVALID_REFERENCE');
     }
     console.error(error);
     return new ServiceError('Error interno del servidor', 500, 'INTERNAL_ERROR');

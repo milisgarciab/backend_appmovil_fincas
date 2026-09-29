@@ -19,9 +19,12 @@ router.use(authenticate);
  *       - in: query
  *         name: animal_id
  *         schema: { type: string }
+ *       - in: query
+ *         name: lote_id
+ *         schema: { type: string }
  *     responses:
  *       200:
- *         description: Lista de registros, incluyendo el animal relacionado
+ *         description: Lista de registros, incluyendo el animal o el lote relacionado
  *       401:
  *         description: Token de acceso requerido o inválido
  */
@@ -64,11 +67,14 @@ router.get('/:id', controller.getById);
  *         application/json:
  *           schema:
  *             type: object
- *             required: [animal_id, litros]
+ *             required: [litros]
+ *             description: "Se debe indicar exactamente uno de animal_id o lote_id (nunca ambos)."
  *             properties:
- *               animal_id: { type: string }
+ *               animal_id: { type: string, description: "Registro por animal individual" }
+ *               lote_id: { type: string, description: "Registro por lote (ej. leche de ordeño grupal)" }
  *               litros: { type: number }
  *               jornada: { type: string, enum: ["Mañana", "Tarde"] }
+ *               observaciones: { type: string, maxLength: 255 }
  *               registrado_en: { type: string, format: date-time, description: "Opcional, para cargar datos de días anteriores. Si se omite, usa la fecha/hora actual." }
  *     responses:
  *       201:
@@ -102,6 +108,7 @@ router.post('/', controller.create);
  *             properties:
  *               litros: { type: number }
  *               jornada: { type: string, enum: ["Mañana", "Tarde"] }
+ *               observaciones: { type: string, maxLength: 255 }
  *               registrado_en: { type: string, format: date-time }
  *     responses:
  *       200:

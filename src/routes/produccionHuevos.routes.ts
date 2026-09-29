@@ -19,9 +19,12 @@ router.use(authenticate);
  *       - in: query
  *         name: lote_id
  *         schema: { type: string }
+ *       - in: query
+ *         name: animal_id
+ *         schema: { type: string }
  *     responses:
  *       200:
- *         description: Lista de registros, incluyendo el lote relacionado
+ *         description: Lista de registros, incluyendo el lote o el animal relacionado
  *       401:
  *         description: Token de acceso requerido o inválido
  */
@@ -65,9 +68,13 @@ router.get('/:id', controller.getById);
  *           schema:
  *             type: object
  *             required: [cantidad]
+ *             description: "lote_id y animal_id son ambos opcionales, pero no se pueden indicar los dos al mismo tiempo."
  *             properties:
- *               lote_id: { type: string, description: "Opcional" }
+ *               lote_id: { type: string, description: "Opcional — registro por lote (ej. galpón)" }
+ *               animal_id: { type: string, description: "Opcional — registro por animal individual" }
  *               cantidad: { type: integer }
+ *               cantidad_rotos: { type: integer, description: "Opcional, no puede superar cantidad" }
+ *               observaciones: { type: string, maxLength: 255 }
  *               registrado_en: { type: string, format: date-time, description: "Opcional, para cargar datos de días anteriores. Si se omite, usa la fecha/hora actual." }
  *     responses:
  *       201:
@@ -100,6 +107,8 @@ router.post('/', controller.create);
  *             type: object
  *             properties:
  *               cantidad: { type: integer }
+ *               cantidad_rotos: { type: integer }
+ *               observaciones: { type: string, maxLength: 255 }
  *               registrado_en: { type: string, format: date-time }
  *     responses:
  *       200:
