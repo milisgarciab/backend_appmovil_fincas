@@ -18,14 +18,17 @@ const JORNADAS_VALIDAS = ['Mañana', 'Tarde'];
 
 export interface CrearProduccionLecheInput {
   animal_id?: number;
+  lote_id?: number;
   litros?: number;
   jornada?: string;
+  observaciones?: string;
   registrado_en?: string;
 }
 
 export interface ActualizarProduccionLecheInput {
   litros?: number;
   jornada?: string;
+  observaciones?: string;
   registrado_en?: string;
 }
 
@@ -43,9 +46,13 @@ export class ProduccionLecheService {
     }
     return registro;
   }
-private validar(input: { litros?: number; registrado_en?: string }) {
+
+  private validar(input: { litros?: number; observaciones?: string; registrado_en?: string }) {
     if (input.litros !== undefined && input.litros < 0) {
       throw new ServiceError('litros debe ser >= 0', 400, 'VALIDATION_ERROR');
+    }
+    if (input.observaciones !== undefined && input.observaciones.length > 255) {
+      throw new ServiceError('observaciones no puede superar 255 caracteres', 400, 'VALIDATION_ERROR');
     }
     if (input.registrado_en) {
       const fecha = new Date(input.registrado_en);
@@ -54,20 +61,29 @@ private validar(input: { litros?: number; registrado_en?: string }) {
       }
     }
   }
+
   async create(input: CrearProduccionLecheInput) {
-    if (!input.animal_id || input.litros === undefined) {
-      throw new ServiceError('animal_id y litros son obligatorios', 400, 'VALIDATION_ERROR');
+    if (input.litros === undefined) {
+      throw new ServiceError('litros es obligatorio', 400, 'VALIDATION_ERROR');
+    }
+    if (!input.animal_id && !input.lote_id) {
+      throw new ServiceError('debe indicar animal_id o lote_id', 400, 'VALIDATION_ERROR');
+    }
+    if (input.animal_id && input.lote_id) {
+      throw new ServiceError('no se puede indicar animal_id y lote_id al mismo tiempo', 400, 'VALIDATION_ERROR');
     }
     if (input.jornada && !JORNADAS_VALIDAS.includes(input.jornada)) {
       throw new ServiceError('jornada debe ser "Mañana" o "Tarde"', 400, 'VALIDATION_ERROR');
     }
-this.validar(input);
+    this.validar(input);
 
     try {
       return await this.repository.create({
         animal_id: input.animal_id,
+        lote_id: input.lote_id,
         litros: input.litros,
         jornada: input.jornada,
+        observaciones: input.observaciones,
         registrado_en: input.registrado_en ? new Date(input.registrado_en) : undefined,
       });
     } catch (error) {
@@ -80,11 +96,12 @@ this.validar(input);
     if (input.jornada && !JORNADAS_VALIDAS.includes(input.jornada)) {
       throw new ServiceError('jornada debe ser "Mañana" o "Tarde"', 400, 'VALIDATION_ERROR');
     }
-this.validar(input);
+    this.validar(input);
     try {
       return await this.repository.update(id, {
         litros: input.litros,
         jornada: input.jornada,
+        observaciones: input.observaciones,
         registrado_en: input.registrado_en ? new Date(input.registrado_en) : undefined,
       });
     } catch (error) {
@@ -97,10 +114,9 @@ this.validar(input);
     await this.repository.delete(id);
   }
 
-
   private mapPrismaError(error: unknown): ServiceError {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
-      return new ServiceError('animal_id no existe', 400, 'INVALID_REFERENCE');
+      return new ServiceError('animal_id o lote_id no existe', 400, 'INVALID_REFERENCE');
     }
     console.error(error);
     return new ServiceError('Error interno del servidor', 500, 'INTERNAL_ERROR');

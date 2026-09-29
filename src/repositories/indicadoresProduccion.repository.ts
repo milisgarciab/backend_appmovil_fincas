@@ -35,8 +35,13 @@ export class IndicadoresProduccionRepository {
   }
 
   countAnimalesConProduccionLeche({ fechaInicio, fechaFin }: RangoFechas) {
+    // No cuenta los registros hechos "por lote" (animal_id nulo) — ver
+    // decisiones-diseno-vs-backend-produccion.md, sección "Modalidad de registro".
     return prisma.produccion_leche.findMany({
-      where: { registrado_en: { gte: fechaInicio, lte: fechaFin } },
+      where: {
+        registrado_en: { gte: fechaInicio, lte: fechaFin },
+        animal_id: { not: null },
+      },
       select: { animal_id: true },
       distinct: ['animal_id'],
     });

@@ -1,14 +1,15 @@
-﻿import { prisma } from '../config/prisma';
+import { prisma } from '../config/prisma';
 
 export interface ProduccionLecheFiltros {
   animal_id?: number;
+  lote_id?: number;
 }
 
 export class ProduccionLecheRepository {
   findAll(filtros: ProduccionLecheFiltros) {
     return prisma.produccion_leche.findMany({
-      where: { animal_id: filtros.animal_id },
-      include: { animales: true },
+      where: { animal_id: filtros.animal_id, lote_id: filtros.lote_id },
+      include: { animales: true, lotes_animales: true },
       orderBy: { registrado_en: 'desc' },
     });
   }
@@ -16,15 +17,25 @@ export class ProduccionLecheRepository {
   findById(id: number) {
     return prisma.produccion_leche.findUnique({
       where: { id },
-      include: { animales: true },
+      include: { animales: true, lotes_animales: true },
     });
   }
 
-  create(data: { animal_id: number; litros: number; jornada?: string; registrado_en?: Date }) {
+  create(data: {
+    animal_id?: number;
+    lote_id?: number;
+    litros: number;
+    jornada?: string;
+    observaciones?: string;
+    registrado_en?: Date;
+  }) {
     return prisma.produccion_leche.create({ data });
   }
 
-  update(id: number, data: { litros?: number; jornada?: string; registrado_en?: Date }) {
+  update(
+    id: number,
+    data: { litros?: number; jornada?: string; observaciones?: string; registrado_en?: Date },
+  ) {
     return prisma.produccion_leche.update({ where: { id }, data });
   }
 
@@ -43,7 +54,7 @@ export class ProduccionLecheRepository {
       prisma.produccion_leche.aggregate({ _sum: { litros: true }, where }),
       prisma.produccion_leche.findMany({
         where,
-        include: { animales: true },
+        include: { animales: true, lotes_animales: true },
         orderBy: { registrado_en: 'desc' },
       }),
     ]);

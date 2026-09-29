@@ -6,7 +6,8 @@ export class ProduccionLecheController {
 
   list = async (req: Request, res: Response) => {
     const animal_id = req.query.animal_id ? Number(req.query.animal_id) : undefined;
-    const registros = await this.service.listAll({ animal_id });
+    const lote_id = req.query.lote_id ? Number(req.query.lote_id) : undefined;
+    const registros = await this.service.listAll({ animal_id, lote_id });
     res.json(registros);
   };
 
