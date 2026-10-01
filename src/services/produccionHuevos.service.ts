@@ -3,7 +3,7 @@ import {
   ProduccionHuevosRepository,
   ProduccionHuevosFiltros,
 } from '../repositories/produccionHuevos.repository';
-
+ 
 export class ServiceError extends Error {
   constructor(
     message: string,
@@ -13,30 +13,37 @@ export class ServiceError extends Error {
     super(message);
   }
 }
-
+ 
+// Mismas jornadas válidas que produccionLeche.service.ts (JORNADAS_VALIDAS).
+// Se duplica aquí en vez de exportarla desde leche para no tocar ese archivo
+// otra vez y mantener el cambio acotado a huevos.
+const JORNADAS_VALIDAS = ['Mañana', 'Tarde'];
+ 
 export interface CrearProduccionHuevosInput {
   lote_id?: number;
   animal_id?: number;
   cantidad?: number;
   cantidad_rotos?: number;
+  jornada?: string;
   observaciones?: string;
   registrado_en?: string;
 }
-
+ 
 export interface ActualizarProduccionHuevosInput {
   cantidad?: number;
   cantidad_rotos?: number;
+  jornada?: string;
   observaciones?: string;
   registrado_en?: string;
 }
-
+ 
 export class ProduccionHuevosService {
   private repository = new ProduccionHuevosRepository();
-
+ 
   listAll(filtros: ProduccionHuevosFiltros) {
     return this.repository.findAll(filtros);
   }
-
+ 
   async getById(id: number) {
     const registro = await this.repository.findById(id);
     if (!registro) {
@@ -44,7 +51,7 @@ export class ProduccionHuevosService {
     }
     return registro;
   }
-
+ 
   private validar(input: {
     cantidad?: number;
     cantidad_rotos?: number;
@@ -74,7 +81,7 @@ export class ProduccionHuevosService {
       }
     }
   }
-
+ 
   async create(input: CrearProduccionHuevosInput) {
     if (input.cantidad === undefined) {
       throw new ServiceError('cantidad es obligatoria', 400, 'VALIDATION_ERROR');
@@ -82,14 +89,18 @@ export class ProduccionHuevosService {
     if (input.animal_id && input.lote_id) {
       throw new ServiceError('no se puede indicar animal_id y lote_id al mismo tiempo', 400, 'VALIDATION_ERROR');
     }
+    if (input.jornada && !JORNADAS_VALIDAS.includes(input.jornada)) {
+      throw new ServiceError('jornada debe ser "Mañana" o "Tarde"', 400, 'VALIDATION_ERROR');
+    }
     this.validar(input);
-
+ 
     try {
       return await this.repository.create({
         lote_id: input.lote_id,
         animal_id: input.animal_id,
         cantidad: input.cantidad,
         cantidad_rotos: input.cantidad_rotos,
+        jornada: input.jornada,
         observaciones: input.observaciones,
         registrado_en: input.registrado_en ? new Date(input.registrado_en) : undefined,
       });
@@ -97,15 +108,19 @@ export class ProduccionHuevosService {
       throw this.mapPrismaError(error);
     }
   }
-
+ 
   async update(id: number, input: ActualizarProduccionHuevosInput) {
     await this.getById(id);
+    if (input.jornada && !JORNADAS_VALIDAS.includes(input.jornada)) {
+      throw new ServiceError('jornada debe ser "Mañana" o "Tarde"', 400, 'VALIDATION_ERROR');
+    }
     this.validar(input);
-
+ 
     try {
       return await this.repository.update(id, {
         cantidad: input.cantidad,
         cantidad_rotos: input.cantidad_rotos,
+        jornada: input.jornada,
         observaciones: input.observaciones,
         registrado_en: input.registrado_en ? new Date(input.registrado_en) : undefined,
       });
@@ -113,12 +128,12 @@ export class ProduccionHuevosService {
       throw this.mapPrismaError(error);
     }
   }
-
+ 
   async delete(id: number) {
     await this.getById(id);
     await this.repository.delete(id);
   }
-
+ 
   private mapPrismaError(error: unknown): ServiceError {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
       return new ServiceError('lote_id o animal_id no existe', 400, 'INVALID_REFERENCE');
@@ -127,3 +142,4 @@ export class ProduccionHuevosService {
     return new ServiceError('Error interno del servidor', 500, 'INTERNAL_ERROR');
   }
 }
+ 
