@@ -3,13 +3,26 @@ import { prisma } from '../config/prisma';
 export interface ProduccionHuevosFiltros {
   lote_id?: number;
   animal_id?: number;
+  // Ver comentario en produccionLeche.repository.ts.
+  incluir_eliminados?: boolean;
 }
+ 
+const INCLUDE_CON_AUDITORIA = {
+  lotes_animales: true,
+  animales: true,
+  creado_por: { select: { id: true, nombre_usuario: true } },
+  eliminado_por: { select: { id: true, nombre_usuario: true } },
+};
  
 export class ProduccionHuevosRepository {
   findAll(filtros: ProduccionHuevosFiltros) {
     return prisma.produccion_huevos.findMany({
-      where: { lote_id: filtros.lote_id, animal_id: filtros.animal_id },
-      include: { lotes_animales: true, animales: true },
+      where: {
+        lote_id: filtros.lote_id,
+        animal_id: filtros.animal_id,
+        ...(filtros.incluir_eliminados ? {} : { eliminado_en: null }),
+      },
+      include: INCLUDE_CON_AUDITORIA,
       orderBy: { registrado_en: 'desc' },
     });
   }
@@ -17,7 +30,7 @@ export class ProduccionHuevosRepository {
   findById(id: number) {
     return prisma.produccion_huevos.findUnique({
       where: { id },
-      include: { lotes_animales: true, animales: true },
+      include: INCLUDE_CON_AUDITORIA,
     });
   }
  
@@ -29,8 +42,9 @@ export class ProduccionHuevosRepository {
     jornada?: string;
     observaciones?: string;
     registrado_en?: Date;
+    creado_por_id?: number;
   }) {
-    return prisma.produccion_huevos.create({ data });
+    return prisma.produccion_huevos.create({ data, include: INCLUDE_CON_AUDITORIA });
   }
  
   update(
@@ -43,11 +57,16 @@ export class ProduccionHuevosRepository {
       registrado_en?: Date;
     },
   ) {
-    return prisma.produccion_huevos.update({ where: { id }, data });
+    return prisma.produccion_huevos.update({ where: { id }, data, include: INCLUDE_CON_AUDITORIA });
   }
  
-  delete(id: number) {
-    return prisma.produccion_huevos.delete({ where: { id } });
+  // Borrado lógico — ver comentario en produccionLeche.repository.ts.
+  softDelete(id: number, eliminadoPorId: number) {
+    return prisma.produccion_huevos.update({
+      where: { id },
+      data: { eliminado_en: new Date(), eliminado_por_id: eliminadoPorId },
+      include: INCLUDE_CON_AUDITORIA,
+    });
   }
  
   async resumenHoy() {
@@ -55,7 +74,7 @@ export class ProduccionHuevosRepository {
     inicio.setHours(0, 0, 0, 0);
     const fin = new Date(inicio);
     fin.setDate(fin.getDate() + 1);
-    const where = { registrado_en: { gte: inicio, lt: fin } };
+    const where = { registrado_en: { gte: inicio, lt: fin }, eliminado_en: null };
  
     const [totales, registros] = await Promise.all([
       prisma.produccion_huevos.aggregate({
@@ -64,7 +83,7 @@ export class ProduccionHuevosRepository {
       }),
       prisma.produccion_huevos.findMany({
         where,
-        include: { lotes_animales: true, animales: true },
+        include: INCLUDE_CON_AUDITORIA,
         orderBy: { registrado_en: 'desc' },
       }),
     ]);

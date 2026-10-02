@@ -82,7 +82,9 @@ export class ProduccionHuevosService {
     }
   }
  
-  async create(input: CrearProduccionHuevosInput) {
+  // `usuarioId` siempre viene del token — ver comentario en
+  // produccionLeche.service.ts.
+  async create(input: CrearProduccionHuevosInput, usuarioId: number) {
     if (input.cantidad === undefined) {
       throw new ServiceError('cantidad es obligatoria', 400, 'VALIDATION_ERROR');
     }
@@ -103,6 +105,7 @@ export class ProduccionHuevosService {
         jornada: input.jornada,
         observaciones: input.observaciones,
         registrado_en: input.registrado_en ? new Date(input.registrado_en) : undefined,
+        creado_por_id: usuarioId,
       });
     } catch (error) {
       throw this.mapPrismaError(error);
@@ -129,9 +132,13 @@ export class ProduccionHuevosService {
     }
   }
  
-  async delete(id: number) {
-    await this.getById(id);
-    await this.repository.delete(id);
+  // Borrado lógico — ver comentario en produccionLeche.service.ts.
+  async delete(id: number, usuarioId: number) {
+    const registro = await this.getById(id);
+    if (registro.eliminado_en) {
+      throw new ServiceError('El registro ya fue eliminado', 400, 'ALREADY_DELETED');
+    }
+    await this.repository.softDelete(id, usuarioId);
   }
  
   private mapPrismaError(error: unknown): ServiceError {
