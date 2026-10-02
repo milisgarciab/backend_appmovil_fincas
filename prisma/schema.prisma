@@ -166,28 +166,43 @@ model precios_mercado {
 }
 
 model produccion_huevos {
-  id             Int             @id @default(autoincrement())
-  lote_id        Int?
-  animal_id      Int?
-  cantidad       Int
-  cantidad_rotos Int?            @default(0)
-  jornada        String?         @db.VarChar(20)
-  observaciones  String?         @db.VarChar(255)
-  registrado_en  DateTime?       @default(now()) @db.Timestamp(6)
-  lotes_animales lotes_animales? @relation(fields: [lote_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  animales       animales?       @relation(fields: [animal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                Int             @id @default(autoincrement())
+  lote_id           Int?
+  animal_id         Int?
+  cantidad          Int
+  cantidad_rotos    Int?            @default(0)
+  jornada           String?         @db.VarChar(20)
+  observaciones     String?         @db.VarChar(255)
+  registrado_en     DateTime?       @default(now()) @db.Timestamp(6)
+  // Auditoría (2026-10-01): quién creó el registro y, si se borró, quién y
+  // cuándo. `eliminado_en` no nulo = borrado lógico (el registro NUNCA se
+  // elimina físicamente de la base de datos, para poder mostrarlo en el
+  // historial con la leyenda "Registro eliminado").
+  creado_por_id     Int?
+  eliminado_en      DateTime?       @db.Timestamp(6)
+  eliminado_por_id  Int?
+  lotes_animales    lotes_animales? @relation(fields: [lote_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  animales          animales?       @relation(fields: [animal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  creado_por        usuarios?       @relation("ProduccionHuevosCreadoPor", fields: [creado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  eliminado_por     usuarios?       @relation("ProduccionHuevosEliminadoPor", fields: [eliminado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 }
 
 model produccion_leche {
-  id             Int              @id @default(autoincrement())
-  animal_id      Int?
-  lote_id        Int?
-  litros         Decimal          @db.Decimal(5, 2)
-  jornada        String?          @db.VarChar(20)
-  observaciones  String?          @db.VarChar(255)
-  registrado_en  DateTime?        @default(now()) @db.Timestamp(6)
-  animales       animales?        @relation(fields: [animal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  lotes_animales lotes_animales?  @relation(fields: [lote_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                Int              @id @default(autoincrement())
+  animal_id         Int?
+  lote_id           Int?
+  litros            Decimal          @db.Decimal(5, 2)
+  jornada           String?          @db.VarChar(20)
+  observaciones     String?          @db.VarChar(255)
+  registrado_en     DateTime?        @default(now()) @db.Timestamp(6)
+  // Auditoría (2026-10-01) — ver comentario en produccion_huevos.
+  creado_por_id     Int?
+  eliminado_en      DateTime?        @db.Timestamp(6)
+  eliminado_por_id  Int?
+  animales          animales?        @relation(fields: [animal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lotes_animales    lotes_animales?  @relation(fields: [lote_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  creado_por        usuarios?        @relation("ProduccionLecheCreadoPor", fields: [creado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  eliminado_por     usuarios?        @relation("ProduccionLecheEliminadoPor", fields: [eliminado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 }
 
 model razas {
@@ -243,18 +258,24 @@ model ubicaciones_potreros {
 }
 
 model usuarios {
-  id                 Int       @id @default(autoincrement())
-  nombre_usuario     String    @db.VarChar(100)
-  correo_electronico String    @unique @db.VarChar(100)
-  telefono           String?   @db.VarChar(20)
-  contrasena         String    @db.VarChar(255)
-  rol_id             Int
-  creado_en          DateTime? @default(now()) @db.Timestamp(6)
-  estado             String?   @default("Activo") @db.VarChar(20)
-  reset_token        String?   @db.VarChar(255)
-  reset_token_expira DateTime? @db.Timestamp(6)
-  roles              roles     @relation(fields: [rol_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  movimientos_inventario movimientos_inventario[]
+  id                            Int                 @id @default(autoincrement())
+  nombre_usuario                String              @db.VarChar(100)
+  correo_electronico            String              @unique @db.VarChar(100)
+  telefono                      String?             @db.VarChar(20)
+  contrasena                    String              @db.VarChar(255)
+  rol_id                        Int
+  creado_en                     DateTime?           @default(now()) @db.Timestamp(6)
+  estado                        String?             @default("Activo") @db.VarChar(20)
+  reset_token                   String?             @db.VarChar(255)
+  reset_token_expira            DateTime?           @db.Timestamp(6)
+  roles                         roles               @relation(fields: [rol_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  movimientos_inventario        movimientos_inventario[]
+  // Auditoría (2026-10-01): registros de producción creados/eliminados por
+  // este usuario. Son listas inversas, no agregan columnas a `usuarios`.
+  produccion_leche_creada       produccion_leche[]  @relation("ProduccionLecheCreadoPor")
+  produccion_leche_eliminada    produccion_leche[]  @relation("ProduccionLecheEliminadoPor")
+  produccion_huevos_creada      produccion_huevos[] @relation("ProduccionHuevosCreadoPor")
+  produccion_huevos_eliminada   produccion_huevos[] @relation("ProduccionHuevosEliminadoPor")
 }
 
 model ventas {
