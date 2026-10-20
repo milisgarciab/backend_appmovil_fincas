@@ -242,10 +242,23 @@ model seguimiento_gestacion {
   fecha_inseminacion   DateTime  @db.Date
   fecha_estimada_parto DateTime  @db.Date
   fecha_real_parto     DateTime? @db.Date
-  estado               String?   @default("Gestante") @db.VarChar(20)
+  estado               String?   @default("Pendiente") @db.VarChar(20)
   notas                String?
+  // Auditoria (2026-10-15): quien hizo cada paso del flujo (crear / confirmar
+  // gestacion / cerrar con parto o aborto). Cualquier usuario autenticado puede
+  // ejecutar cualquier paso -- no se restringe por rol, solo se deja constancia
+  // de quien hizo cada uno. Mismo patron que produccion: los *_id siempre se
+  // toman del token de sesion, nunca del body.
+  creado_por_id        Int?
+  confirmado_por_id    Int?
+  confirmado_en        DateTime? @db.Timestamp(6)
+  cerrado_por_id       Int?
+  cerrado_en           DateTime? @db.Timestamp(6)
   animales             animales  @relation("GestacionAnimal", fields: [animal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   macho                animales? @relation("GestacionMacho", fields: [macho_id], references: [id], onUpdate: NoAction)
+  creado_por           usuarios? @relation("GestacionCreadoPor", fields: [creado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  confirmado_por       usuarios? @relation("GestacionConfirmadoPor", fields: [confirmado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  cerrado_por          usuarios? @relation("GestacionCerradoPor", fields: [cerrado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 }
 
 model ubicaciones_potreros {
@@ -276,6 +289,10 @@ model usuarios {
   produccion_leche_eliminada    produccion_leche[]  @relation("ProduccionLecheEliminadoPor")
   produccion_huevos_creada      produccion_huevos[] @relation("ProduccionHuevosCreadoPor")
   produccion_huevos_eliminada   produccion_huevos[] @relation("ProduccionHuevosEliminadoPor")
+  // Auditoria (2026-10-15): pasos de seguimiento_gestacion hechos por este usuario.
+  gestacion_creada              seguimiento_gestacion[] @relation("GestacionCreadoPor")
+  gestacion_confirmada          seguimiento_gestacion[] @relation("GestacionConfirmadoPor")
+  gestacion_cerrada             seguimiento_gestacion[] @relation("GestacionCerradoPor")
 }
 
 model ventas {
