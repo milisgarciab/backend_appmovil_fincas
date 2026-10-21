@@ -244,6 +244,10 @@ model seguimiento_gestacion {
   fecha_real_parto     DateTime? @db.Date
   estado               String?   @default("Pendiente") @db.VarChar(20)
   notas                String?
+  // 2026-10-20: fecha real de creacion del registro -- distinta de
+  // fecha_inseminacion (esa es la fecha del evento reproductivo, puede
+  // registrarse dias despues). Necesaria para la pantalla de detalle.
+  creado_en            DateTime? @default(now()) @db.Timestamp(6)
   // Auditoria (2026-10-15): quien hizo cada paso del flujo (crear / confirmar
   // gestacion / cerrar con parto o aborto). Cualquier usuario autenticado puede
   // ejecutar cualquier paso -- no se restringe por rol, solo se deja constancia
@@ -254,11 +258,23 @@ model seguimiento_gestacion {
   confirmado_en        DateTime? @db.Timestamp(6)
   cerrado_por_id       Int?
   cerrado_en           DateTime? @db.Timestamp(6)
+  // Auditoria (2026-10-20): soporte de Historial -- mismo patron de borrado
+  // logico ya usado en produccion_huevos/produccion_leche. `eliminado_en` no
+  // nulo = borrado logico (nunca se borra fisicamente de la BD, para poder
+  // mostrarlo despues en el Historial con la leyenda "Registro eliminado").
+  // `editado_por_id`/`editado_en` quedan en la ULTIMA edicion de campos (no
+  // es un historial de cada cambio, solo "quien edito por ultima vez y cuando").
+  editado_por_id       Int?
+  editado_en           DateTime? @db.Timestamp(6)
+  eliminado_por_id     Int?
+  eliminado_en         DateTime? @db.Timestamp(6)
   animales             animales  @relation("GestacionAnimal", fields: [animal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   macho                animales? @relation("GestacionMacho", fields: [macho_id], references: [id], onUpdate: NoAction)
   creado_por           usuarios? @relation("GestacionCreadoPor", fields: [creado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
   confirmado_por       usuarios? @relation("GestacionConfirmadoPor", fields: [confirmado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
   cerrado_por          usuarios? @relation("GestacionCerradoPor", fields: [cerrado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  editado_por          usuarios? @relation("GestacionEditadoPor", fields: [editado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  eliminado_por        usuarios? @relation("GestacionEliminadoPor", fields: [eliminado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 }
 
 model ubicaciones_potreros {
@@ -293,6 +309,9 @@ model usuarios {
   gestacion_creada              seguimiento_gestacion[] @relation("GestacionCreadoPor")
   gestacion_confirmada          seguimiento_gestacion[] @relation("GestacionConfirmadoPor")
   gestacion_cerrada             seguimiento_gestacion[] @relation("GestacionCerradoPor")
+  // Auditoria (2026-10-20): edicion/borrado logico de seguimiento_gestacion.
+  gestacion_editada             seguimiento_gestacion[] @relation("GestacionEditadoPor")
+  gestacion_eliminada           seguimiento_gestacion[] @relation("GestacionEliminadoPor")
 }
 
 model ventas {
