@@ -123,10 +123,13 @@ export class SeguimientoGestacionService {
   }
  
   // Edicion de campos que no forman parte del flujo de estados (ese pasa por
-  // confirmar()/cerrar()). Un registro ya cerrado (Parida/Abortada/Fallida)
-  // queda inmutable para estos campos.
-  async update(id: number, input: ActualizarSeguimientoInput) {
+  // confirmar()/cerrar()). Un registro ya cerrado (Parida/Abortada/Fallida) o
+  // ya eliminado (borrado logico) queda inmutable para estos campos.
+  // 2026-10-20: ahora recibe `usuarioId` para dejar constancia de quien edito
+  // por ultima vez (editado_por_id/editado_en).
+  async update(id: number, input: ActualizarSeguimientoInput, usuarioId: number) {
     const registroActual = await this.getById(id);
+    this.rechazarSiEliminado(registroActual);
     if (this.estaCerrado(registroActual.estado)) {
       throw new ServiceError('El registro ya esta cerrado y no se puede editar', 400, 'REGISTRO_CERRADO');
     }
@@ -144,7 +147,7 @@ export class SeguimientoGestacionService {
     }
  
     try {
-      return await this.repository.update(id, {
+      return await this.repository.update(id, usuarioId, {
         macho_id: input.macho_id,
         tipo: input.tipo,
         fecha_inseminacion: input.fecha_inseminacion ? new Date(input.fecha_inseminacion) : undefined,
@@ -166,6 +169,7 @@ export class SeguimientoGestacionService {
   // backend la deja opcional para no romper otros llamadores existentes.
   async confirmar(id: number, usuarioId: number, notas?: string) {
     const registro = await this.getById(id);
+    this.rechazarSiEliminado(registro);
     if (registro.estado !== 'Pendiente') {
       throw new ServiceError(
         'Solo se puede confirmar un seguimiento en estado Pendiente',
@@ -189,6 +193,7 @@ export class SeguimientoGestacionService {
   // mas habia que sumar 'Fallida' a RESULTADOS_VALIDOS.
   async cerrar(id: number, usuarioId: number, input: CerrarSeguimientoInput) {
     const registro = await this.getById(id);
+    this.rechazarSiEliminado(registro);
     if (this.estaCerrado(registro.estado)) {
       throw new ServiceError('El registro ya fue cerrado', 400, 'YA_CERRADO');
     }
@@ -222,13 +227,23 @@ export class SeguimientoGestacionService {
     return actualizado;
   }
  
-  async delete(id: number) {
-    await this.getById(id);
-    await this.repository.delete(id);
+  // 2026-10-20: borrado logico (mismo patron que produccion_huevos/leche) --
+  // ya NO elimina la fila fisicamente, solo marca eliminado_por_id/eliminado_en
+  // para que el registro siga apareciendo en el Historial con su leyenda.
+  async delete(id: number, usuarioId: number) {
+    const registro = await this.getById(id);
+    this.rechazarSiEliminado(registro);
+    await this.repository.eliminar(id, usuarioId);
   }
  
   private estaCerrado(estado: string | null): boolean {
     return estado === 'Parida' || estado === 'Abortada' || estado === 'Fallida';
+  }
+ 
+  private rechazarSiEliminado(registro: { eliminado_en: Date | null }) {
+    if (registro.eliminado_en) {
+      throw new ServiceError('El registro ya fue eliminado', 400, 'YA_ELIMINADO');
+    }
   }
  
   private resolverFechaEstimadaParto(

@@ -23,6 +23,10 @@ router.use(authenticate);
  *         name: estado
  *         schema: { type: string }
  *         description: "Pendiente, Gestante, Parida, Abortada o Fallida"
+ *       - in: query
+ *         name: incluirEliminados
+ *         schema: { type: boolean }
+ *         description: "'true' incluye tambien los registros con borrado logico (exclusivo de la pantalla de Historial). Por defecto (ausente o 'false') NUNCA se incluyen."
  *     responses:
  *       200:
  *         description: Lista de seguimientos, incluyendo el animal, el macho y los usuarios de auditoria relacionados
@@ -35,7 +39,7 @@ router.get('/', controller.list);
  * @openapi
  * /reproduccion/{id}:
  *   get:
- *     summary: Obtiene el detalle de un seguimiento de gestacion
+ *     summary: Obtiene el detalle de un seguimiento de gestacion (incluye registros con borrado logico, para la pantalla de Historial)
  *     tags: [Reproducción]
  *     security:
  *       - bearerAuth: []
@@ -90,7 +94,7 @@ router.post('/', controller.create);
  * @openapi
  * /reproduccion/{id}:
  *   put:
- *     summary: Edita los campos de un seguimiento que no son del flujo de estados (no cierra ni confirma)
+ *     summary: Edita los campos de un seguimiento que no son del flujo de estados (no cierra ni confirma). Deja constancia de quien edito por ultima vez (editado_por/editado_en).
  *     tags: [Reproducción]
  *     security:
  *       - bearerAuth: []
@@ -115,7 +119,7 @@ router.post('/', controller.create);
  *       200:
  *         description: Registro actualizado
  *       400:
- *         description: El registro ya esta cerrado (Parida/Abortada/Fallida) y no se puede editar
+ *         description: El registro ya esta cerrado (Parida/Abortada/Fallida), ya fue eliminado, o datos invalidos
  *       401:
  *         description: Token de acceso requerido o invalido
  *       404:
@@ -140,7 +144,7 @@ router.put('/:id', controller.update);
  *       200:
  *         description: Registro confirmado, con confirmado_por y confirmado_en tomados del token/fecha actual
  *       400:
- *         description: El registro no esta en estado Pendiente
+ *         description: El registro no esta en estado Pendiente, o ya fue eliminado
  *       401:
  *         description: Token de acceso requerido o invalido
  *       404:
@@ -176,7 +180,7 @@ router.patch('/:id/confirmar', controller.confirmar);
  *       200:
  *         description: Registro cerrado, con cerrado_por y cerrado_en tomados del token/fecha actual
  *       400:
- *         description: El registro ya estaba cerrado, o datos invalidos
+ *         description: El registro ya estaba cerrado, ya fue eliminado, o datos invalidos
  *       401:
  *         description: Token de acceso requerido o invalido
  *       404:
@@ -188,7 +192,7 @@ router.patch('/:id/cerrar', controller.cerrar);
  * @openapi
  * /reproduccion/{id}:
  *   delete:
- *     summary: Elimina un registro de seguimiento de gestacion
+ *     summary: "Elimina (borrado logico) un registro de seguimiento de gestacion. NO se borra fisicamente de la base de datos -- queda marcado con eliminado_por/eliminado_en y sigue visible en la pantalla de Historial (con incluirEliminados=true)."
  *     tags: [Reproducción]
  *     security:
  *       - bearerAuth: []
@@ -199,7 +203,9 @@ router.patch('/:id/cerrar', controller.cerrar);
  *         schema: { type: string }
  *     responses:
  *       204:
- *         description: Registro eliminado
+ *         description: Registro eliminado (logicamente)
+ *       400:
+ *         description: El registro ya habia sido eliminado
  *       401:
  *         description: Token de acceso requerido o invalido
  *       404:

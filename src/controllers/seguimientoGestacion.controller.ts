@@ -4,10 +4,15 @@ import { SeguimientoGestacionService, ServiceError } from '../services/seguimien
 export class SeguimientoGestacionController {
   private service = new SeguimientoGestacionService();
  
+  // 2026-10-20: `incluirEliminados=true` es exclusivo de la pantalla de
+  // Historial -- el resto de pantallas (panorama, burbujas, listas por
+  // estado) NUNCA deben mandar este parametro, para no mostrar registros
+  // con borrado logico.
   list = async (req: Request, res: Response) => {
     const animal_id = req.query.animal_id ? Number(req.query.animal_id) : undefined;
     const estado = req.query.estado ? String(req.query.estado) : undefined;
-    const registros = await this.service.listAll({ animal_id, estado });
+    const incluirEliminados = req.query.incluirEliminados === 'true';
+    const registros = await this.service.listAll({ animal_id, estado, incluirEliminados });
     res.json(registros);
   };
  
@@ -33,7 +38,9 @@ export class SeguimientoGestacionController {
  
   update = async (req: Request, res: Response) => {
     try {
-      const registro = await this.service.update(Number(req.params.id), req.body);
+      // 2026-10-20: se pasa req.usuario!.id para dejar constancia de quien
+      // edito por ultima vez (editado_por_id/editado_en).
+      const registro = await this.service.update(Number(req.params.id), req.body, req.usuario!.id);
       res.json(registro);
     } catch (error) {
       this.handleError(error, res);
@@ -54,7 +61,7 @@ export class SeguimientoGestacionController {
     }
   };
  
-  // Paso 3 del flujo: cierra el seguimiento con su resultado final (Parida/Abortada).
+  // Paso 3 del flujo: cierra el seguimiento con su resultado final (Parida/Abortada/Fallida).
   cerrar = async (req: Request, res: Response) => {
     try {
       const registro = await this.service.cerrar(Number(req.params.id), req.usuario!.id, req.body);
@@ -64,9 +71,11 @@ export class SeguimientoGestacionController {
     }
   };
  
+  // 2026-10-20: ya NO es un borrado fisico -- borrado logico. Se pasa
+  // req.usuario!.id para dejar constancia de quien elimino y cuando.
   delete = async (req: Request, res: Response) => {
     try {
-      await this.service.delete(Number(req.params.id));
+      await this.service.delete(Number(req.params.id), req.usuario!.id);
       res.status(204).send();
     } catch (error) {
       this.handleError(error, res);
