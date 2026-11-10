@@ -1,14 +1,14 @@
 import { Request, Response } from 'express';
 import { PotreroService, ServiceError } from '../services/potrero.service';
-
+ 
 export class PotreroController {
   private service = new PotreroService();
-
+ 
   list = async (_req: Request, res: Response) => {
     const potreros = await this.service.listAll();
     res.json(potreros);
   };
-
+ 
   getById = async (req: Request, res: Response) => {
     try {
       const potrero = await this.service.getById(Number(req.params.id));
@@ -17,7 +17,7 @@ export class PotreroController {
       this.handleError(error, res);
     }
   };
-
+ 
   create = async (req: Request, res: Response) => {
     try {
       const potrero = await this.service.create(req.body);
@@ -26,7 +26,7 @@ export class PotreroController {
       this.handleError(error, res);
     }
   };
-
+ 
   update = async (req: Request, res: Response) => {
     try {
       const potrero = await this.service.update(Number(req.params.id), req.body);
@@ -35,7 +35,7 @@ export class PotreroController {
       this.handleError(error, res);
     }
   };
-
+ 
   delete = async (req: Request, res: Response) => {
     try {
       await this.service.delete(Number(req.params.id));
@@ -44,7 +44,7 @@ export class PotreroController {
       this.handleError(error, res);
     }
   };
-
+ 
   getAnimales = async (req: Request, res: Response) => {
     try {
       const animales = await this.service.getAnimalesDelPotrero(Number(req.params.id));
@@ -53,7 +53,34 @@ export class PotreroController {
       this.handleError(error, res);
     }
   };
-
+ 
+  agregarEncargado = async (req: Request, res: Response) => {
+    try {
+      const potrero = await this.service.agregarEncargado(Number(req.params.id), Number(req.body.usuario_id));
+      res.status(201).json(potrero);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  };
+ 
+  quitarEncargado = async (req: Request, res: Response) => {
+    try {
+      const potrero = await this.service.quitarEncargado(Number(req.params.id), Number(req.params.usuarioId));
+      res.json(potrero);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  };
+ 
+  subirFoto = async (req: Request, res: Response) => {
+    try {
+      const potrero = await this.service.subirFoto(Number(req.params.id), req.file);
+      res.json(potrero);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  };
+ 
   private handleError(error: unknown, res: Response) {
     if (error instanceof ServiceError) {
       return res.status(error.statusCode).json({ error: { code: error.code, message: error.message } });
@@ -62,3 +89,4 @@ export class PotreroController {
     res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Error interno del servidor' } });
   }
 }
+ 
