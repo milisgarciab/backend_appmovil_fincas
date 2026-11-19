@@ -1,14 +1,14 @@
 import { Request, Response } from 'express';
 import { LoteAnimalService, ServiceError } from '../services/loteAnimal.service';
-
+ 
 export class LoteAnimalController {
   private service = new LoteAnimalService();
-
+ 
   list = async (_req: Request, res: Response) => {
     const lotes = await this.service.listAll();
     res.json(lotes);
   };
-
+ 
   getById = async (req: Request, res: Response) => {
     const lote = await this.service.getById(Number(req.params.id));
     if (!lote) {
@@ -16,7 +16,7 @@ export class LoteAnimalController {
     }
     res.json(lote);
   };
-
+ 
   create = async (req: Request, res: Response) => {
     try {
       const lote = await this.service.create(req.body);
@@ -25,7 +25,7 @@ export class LoteAnimalController {
       this.handleError(error, res);
     }
   };
-
+ 
   update = async (req: Request, res: Response) => {
     try {
       const lote = await this.service.update(Number(req.params.id), req.body);
@@ -34,7 +34,7 @@ export class LoteAnimalController {
       this.handleError(error, res);
     }
   };
-
+ 
   delete = async (req: Request, res: Response) => {
     try {
       await this.service.delete(Number(req.params.id));
@@ -43,16 +43,16 @@ export class LoteAnimalController {
       this.handleError(error, res);
     }
   };
-
-  asignarPotrero = async (req: Request, res: Response) => {
+ 
+  asignarEncargado = async (req: Request, res: Response) => {
     try {
-      const lote = await this.service.asignarPotrero(Number(req.params.id), req.body.potrero_id ?? null);
+      const lote = await this.service.asignarEncargado(Number(req.params.id), req.body.encargado_id ?? null);
       res.json(lote);
     } catch (error) {
       this.handleError(error, res);
     }
   };
-
+ 
   private handleError(error: unknown, res: Response) {
     if (error instanceof ServiceError) {
       return res.status(error.statusCode).json({ error: { code: error.code, message: error.message } });
@@ -61,3 +61,4 @@ export class LoteAnimalController {
     res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Error interno del servidor' } });
   }
 }
+ 

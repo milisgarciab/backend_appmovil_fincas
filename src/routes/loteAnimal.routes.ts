@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { LoteAnimalController } from '../controllers/loteAnimal.controller';
 import { authenticate } from '../middlewares/authenticate';
-
+ 
 const router = Router();
 const controller = new LoteAnimalController();
-
+ 
 router.use(authenticate);
-
+ 
 /**
  * @openapi
  * /lotes-animales:
@@ -22,7 +22,7 @@ router.use(authenticate);
  *         description: Token de acceso requerido o inválido
  */
 router.get('/', controller.list);
-
+ 
 /**
  * @openapi
  * /lotes-animales/{id}:
@@ -46,7 +46,7 @@ router.get('/', controller.list);
  *         description: Lote no encontrado
  */
 router.get('/:id', controller.getById);
-
+ 
 /**
  * @openapi
  * /lotes-animales:
@@ -61,22 +61,26 @@ router.get('/:id', controller.getById);
  *         application/json:
  *           schema:
  *             type: object
- *             required: [nombre]
+ *             required: [nombre, especie_id]
  *             properties:
  *               nombre: { type: string }
- *               potrero_id: { type: string }
+ *               especie_id: { type: integer }
+ *               fecha_creacion: { type: string, format: date }
+ *               capacidad_estimada: { type: integer }
+ *               descripcion: { type: string }
+ *               encargado_id: { type: integer, nullable: true }
  *     responses:
  *       201:
  *         description: Lote creado
  *       400:
- *         description: nombre es obligatorio
+ *         description: nombre o especie_id faltante
  *       401:
  *         description: Token de acceso requerido o inválido
  *       409:
- *         description: potrero_id no existe
+ *         description: especie_id o encargado_id no existen
  */
 router.post('/', controller.create);
-
+ 
 /**
  * @openapi
  * /lotes-animales/{id}:
@@ -99,7 +103,11 @@ router.post('/', controller.create);
  *             type: object
  *             properties:
  *               nombre: { type: string }
- *               potrero_id: { type: string }
+ *               especie_id: { type: integer }
+ *               fecha_creacion: { type: string, format: date }
+ *               capacidad_estimada: { type: integer }
+ *               descripcion: { type: string }
+ *               encargado_id: { type: integer, nullable: true }
  *     responses:
  *       200:
  *         description: Lote actualizado
@@ -108,10 +116,10 @@ router.post('/', controller.create);
  *       404:
  *         description: Lote no encontrado
  *       409:
- *         description: potrero_id no existe
+ *         description: especie_id o encargado_id no existen
  */
 router.put('/:id', controller.update);
-
+ 
 /**
  * @openapi
  * /lotes-animales/{id}:
@@ -137,12 +145,12 @@ router.put('/:id', controller.update);
  *         description: No se puede eliminar, hay animales asociados
  */
 router.delete('/:id', controller.delete);
-
+ 
 /**
  * @openapi
- * /lotes-animales/{id}/potrero:
+ * /lotes-animales/{id}/encargado:
  *   patch:
- *     summary: Asigna o cambia el potrero de un lote
+ *     summary: Asigna o quita el encargado de un lote (un único usuario)
  *     tags: [Lotes de animales]
  *     security:
  *       - bearerAuth: []
@@ -159,17 +167,18 @@ router.delete('/:id', controller.delete);
  *           schema:
  *             type: object
  *             properties:
- *               potrero_id: { type: string, nullable: true }
+ *               encargado_id: { type: integer, nullable: true }
  *     responses:
  *       200:
- *         description: Lote actualizado con su nuevo potrero
+ *         description: Lote actualizado con su nuevo encargado
  *       401:
  *         description: Token de acceso requerido o inválido
  *       404:
  *         description: Lote no encontrado
  *       409:
- *         description: potrero_id no existe
+ *         description: encargado_id no existe
  */
-router.patch('/:id/potrero', controller.asignarPotrero);
-
+router.patch('/:id/encargado', controller.asignarEncargado);
+ 
 export default router;
+ 
