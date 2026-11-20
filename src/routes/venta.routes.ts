@@ -41,7 +41,7 @@ router.get('/:id', controller.getById);
  * @openapi
  * /ventas:
  *   post:
- *     summary: Registra una venta (el total se calcula en el servidor)
+ *     summary: Registra una venta (el total se calcula en el servidor; por defecto estado_pago Pagado)
  *     tags: [Financiera]
  *     security: [{ bearerAuth: [] }]
  *     requestBody:
@@ -57,6 +57,9 @@ router.get('/:id', controller.getById);
  *               precio_unitario: { type: number }
  *               comprador: { type: string }
  *               fecha: { type: string, format: date }
+ *               estado_pago: { type: string, enum: [Pagado, Pendiente], default: Pagado }
+ *               fecha_pago: { type: string, format: date, description: "Solo Pagado; si se omite se usa la fecha de la venta" }
+ *               fecha_limite_pago: { type: string, format: date, description: "Solo Pendiente; opcional, no anterior a la fecha de la venta" }
  *     responses:
  *       201: { description: Venta creada }
  *       400: { description: Datos inválidos }
@@ -75,8 +78,24 @@ router.post('/', controller.create);
  *         name: id
  *         required: true
  *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               producto: { type: string }
+ *               cantidad: { type: number }
+ *               precio_unitario: { type: number }
+ *               comprador: { type: string }
+ *               fecha: { type: string, format: date }
+ *               estado_pago: { type: string, enum: [Pagado, Pendiente], description: "Pendiente->Pagado registra fecha_pago (la enviada o hoy); Pagado->Pendiente la anula" }
+ *               fecha_pago: { type: string, format: date }
+ *               fecha_limite_pago: { type: string, format: date, nullable: true }
  *     responses:
  *       200: { description: Venta actualizada }
+ *       400: { description: Datos inválidos }
  *       404: { description: Venta no encontrada }
  */
 router.put('/:id', controller.update);

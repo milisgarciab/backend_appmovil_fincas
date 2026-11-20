@@ -16,6 +16,9 @@ export class VentaRepository {
     total: number;
     comprador?: string;
     fecha: Date;
+    estado_pago: string;
+    fecha_pago: Date | null;
+    fecha_limite_pago: Date | null;
   }) {
     return prisma.ventas.create({ data });
   }
@@ -29,6 +32,9 @@ export class VentaRepository {
       total: number;
       comprador: string;
       fecha: Date;
+      estado_pago: string;
+      fecha_pago: Date | null;
+      fecha_limite_pago: Date | null;
     }>,
   ) {
     return prisma.ventas.update({ where: { id }, data });
@@ -41,7 +47,7 @@ export class VentaRepository {
   sumByRango(fechaInicio: Date, fechaFin: Date) {
     return prisma.ventas.aggregate({
       _sum: { total: true },
-      where: { fecha: { gte: fechaInicio, lte: fechaFin } },
+      where: { estado_pago: 'Pagado', fecha_pago: { gte: fechaInicio, lte: fechaFin } },
     });
   }
 }

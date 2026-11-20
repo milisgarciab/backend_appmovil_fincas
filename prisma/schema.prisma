@@ -68,6 +68,11 @@ model balance {
   total_ventas Decimal   @db.Decimal(10, 2)
   total_gastos Decimal   @db.Decimal(10, 2)
   balance_neto Decimal   @db.Decimal(10, 2)
+  // Rango real que cubre el balance (2026-11-19). Opcionales: los balances
+  // generados antes de este cambio quedan sin ellas. "En curso"/"Cerrado" se
+  // deduce de estas fechas en el cliente, no se guarda.
+  fecha_inicio DateTime? @db.Date
+  fecha_fin    DateTime? @db.Date
   creado_en    DateTime? @default(now()) @db.Timestamp(6)
 }
 
@@ -149,6 +154,9 @@ model gastos {
   descripcion String?
   monto       Decimal   @db.Decimal(10, 2)
   fecha       DateTime  @db.Date
+  // Medio de pago (2026-11-19): 'Efectivo' o 'Transferencia'. Opcional; los
+  // gastos anteriores a este cambio quedan sin valor.
+  metodo_pago String?   @db.VarChar(20)
   creado_en   DateTime? @default(now()) @db.Timestamp(6)
 }
 
@@ -406,12 +414,18 @@ model usuarios {
 }
 
 model ventas {
-  id              Int       @id @default(autoincrement())
-  producto        String    @db.VarChar(50)
-  cantidad        Decimal   @db.Decimal(10, 2)
-  precio_unitario Decimal   @db.Decimal(10, 2)
-  total           Decimal   @db.Decimal(10, 2)
-  comprador       String?   @db.VarChar(100)
-  fecha           DateTime  @db.Date
-  creado_en       DateTime? @default(now()) @db.Timestamp(6)
+  id                Int       @id @default(autoincrement())
+  producto          String    @db.VarChar(50)
+  cantidad          Decimal   @db.Decimal(10, 2)
+  precio_unitario   Decimal   @db.Decimal(10, 2)
+  total             Decimal   @db.Decimal(10, 2)
+  comprador         String?   @db.VarChar(100)
+  fecha             DateTime  @db.Date
+  // Estado de pago (2026-11-19): 'Pagado' o 'Pendiente'. Las ventas
+  // existentes quedan 'Pagado'. El balance suma solo las pagadas, por
+  // fecha_pago. fecha_limite_pago solo aplica a las pendientes.
+  estado_pago       String    @default("Pagado") @db.VarChar(20)
+  fecha_pago        DateTime? @db.Date
+  fecha_limite_pago DateTime? @db.Date
+  creado_en         DateTime? @default(now()) @db.Timestamp(6)
 }

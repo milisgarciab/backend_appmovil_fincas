@@ -9,11 +9,26 @@ export class GastoRepository {
     return prisma.gastos.findUnique({ where: { id } });
   }
 
-  create(data: { categoria: string; descripcion?: string; monto: number; fecha: Date }) {
+  create(data: {
+    categoria: string;
+    descripcion?: string;
+    monto: number;
+    fecha: Date;
+    metodo_pago?: string | null;
+  }) {
     return prisma.gastos.create({ data });
   }
 
-  update(id: number, data: Partial<{ categoria: string; descripcion: string; monto: number; fecha: Date }>) {
+  update(
+    id: number,
+    data: Partial<{
+      categoria: string;
+      descripcion: string;
+      monto: number;
+      fecha: Date;
+      metodo_pago: string | null;
+    }>,
+  ) {
     return prisma.gastos.update({ where: { id }, data });
   }
 

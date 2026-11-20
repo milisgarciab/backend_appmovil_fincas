@@ -56,6 +56,7 @@ router.get('/:id', controller.getById);
  *               descripcion: { type: string }
  *               monto: { type: number }
  *               fecha: { type: string, format: date }
+ *               metodo_pago: { type: string, enum: [Efectivo, Transferencia], nullable: true, description: 'Opcional' }
  *     responses:
  *       201: { description: Gasto creado }
  *       400: { description: Datos inválidos }
@@ -74,6 +75,17 @@ router.post('/', controller.create);
  *         name: id
  *         required: true
  *         schema: { type: string }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               categoria: { type: string }
+ *               descripcion: { type: string }
+ *               monto: { type: number }
+ *               fecha: { type: string, format: date }
+ *               metodo_pago: { type: string, enum: [Efectivo, Transferencia], nullable: true, description: 'null = sin medio de pago; omitirlo = sin cambio' }
  *     responses:
  *       200: { description: Gasto actualizado }
  *       404: { description: Gasto no encontrado }

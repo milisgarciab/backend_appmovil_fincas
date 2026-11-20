@@ -9,7 +9,14 @@ export class BalanceRepository {
     return prisma.balance.findUnique({ where: { id } });
   }
 
-  create(data: { periodo: Date; total_ventas: number; total_gastos: number; balance_neto: number }) {
+  create(data: {
+    periodo: Date;
+    total_ventas: number;
+    total_gastos: number;
+    balance_neto: number;
+    fecha_inicio?: Date;
+    fecha_fin?: Date;
+  }) {
     return prisma.balance.create({ data });
   }
 }

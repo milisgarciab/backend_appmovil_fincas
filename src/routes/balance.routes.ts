@@ -41,7 +41,7 @@ router.get('/:id', controller.getById);
  * @openapi
  * /balance/generar:
  *   post:
- *     summary: Calcula y guarda un balance (suma ventas y gastos del rango de fechas)
+ *     summary: Calcula y guarda un balance (suma las ventas Pagado por fecha_pago y los gastos por fecha dentro del rango; guarda fecha_inicio y fecha_fin)
  *     tags: [Financiera]
  *     security: [{ bearerAuth: [] }]
  *     requestBody:
@@ -57,7 +57,7 @@ router.get('/:id', controller.getById);
  *               fecha_fin: { type: string, format: date }
  *     responses:
  *       201: { description: Balance generado y guardado }
- *       400: { description: Datos inválidos }
+ *       400: { description: Datos inválidos (campos faltantes, fechas no válidas o fecha_fin anterior a fecha_inicio) }
  */
 router.post('/generar', controller.generar);
 
