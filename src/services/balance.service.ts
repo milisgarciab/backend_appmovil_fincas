@@ -38,6 +38,12 @@ export class BalanceService {
 
     const fechaInicio = new Date(input.fecha_inicio);
     const fechaFin = new Date(input.fecha_fin);
+    if (Number.isNaN(fechaInicio.getTime()) || Number.isNaN(fechaFin.getTime())) {
+      throw new ServiceError('fecha_inicio y fecha_fin deben ser fechas válidas', 400, 'VALIDATION_ERROR');
+    }
+    if (fechaFin < fechaInicio) {
+      throw new ServiceError('fecha_fin no puede ser anterior a fecha_inicio', 400, 'VALIDATION_ERROR');
+    }
 
     const [ventasAgg, gastosAgg] = await Promise.all([
       this.ventaRepository.sumByRango(fechaInicio, fechaFin),
@@ -53,6 +59,8 @@ export class BalanceService {
       total_ventas: totalVentas,
       total_gastos: totalGastos,
       balance_neto: balanceNeto,
+      fecha_inicio: fechaInicio,
+      fecha_fin: fechaFin,
     });
   }
 }
