@@ -25,7 +25,9 @@ export class IndicadoresProduccionRepository {
  
   aggregateHuevos({ fechaInicio, fechaFin }: RangoFechas) {
     return prisma.produccion_huevos.aggregate({
-      _sum: { cantidad: true },
+      // `cantidad_rotos` se suma aparte (2026-11-23) para el desglose por
+      // rango: producidos, rotos y aprovechables. Cambio aditivo.
+      _sum: { cantidad: true, cantidad_rotos: true },
       _avg: { cantidad: true },
       _count: { id: true },
       where: {
