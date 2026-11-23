@@ -84,6 +84,80 @@ export async function aplicarMovimientoStock(tx: Prisma.TransactionClient, data:
   });
 }
 
+// Lo que ya llevó a stock un registro de producción o una venta: Entradas y
+// Ajustes suman, Salidas restan. `rastreado` es falso si nunca generó
+// movimientos (registros anteriores a la activación del stock): esos NO se
+// compensan al editarlos o eliminarlos.
+export async function netoPorOrigen(
+  tx: Prisma.TransactionClient,
+  origen: OrigenMovimientoStock,
+  origenId: number,
+) {
+  const movimientos = await tx.movimientos_stock.findMany({
+    where: { origen, origen_id: origenId },
+    select: { tipo: true, cantidad: true },
+  });
+  let neto = 0;
+  for (const m of movimientos) {
+    neto += m.tipo === 'Salida' ? -Number(m.cantidad) : Number(m.cantidad);
+  }
+  return { rastreado: movimientos.length > 0, neto: Number(neto.toFixed(2)) };
+}
+
+// Entrada de un registro de producción recién creado (huevos aprovechables o
+// litros). Se crea siempre, aunque sea 0, para marcar el registro como
+// "rastreado" y poder compensarlo después.
+export function registrarEntradaProduccion(
+  tx: Prisma.TransactionClient,
+  d: {
+    producto: ProductoStock;
+    origen: OrigenMovimientoStock;
+    origen_id: number;
+    cantidad: number;
+    usuario_id?: number | null;
+  },
+) {
+  return aplicarMovimientoStock(tx, {
+    producto: d.producto,
+    tipo: 'Entrada',
+    cantidad: d.cantidad,
+    origen: d.origen,
+    origen_id: d.origen_id,
+    motivo: 'Producción registrada',
+    usuario_id: d.usuario_id ?? undefined,
+  });
+}
+
+// Deja lo que un registro lleva a stock en `aprovechable` (0 al eliminarlo):
+// crea un Ajuste por la diferencia. Si el registro es anterior a la
+// activación (sin movimientos) no hace nada. Si la diferencia es negativa y
+// ya no alcanza el stock (parte se vendió), lanza STOCK_INSUFICIENTE.
+export async function compensarProduccion(
+  tx: Prisma.TransactionClient,
+  d: {
+    producto: ProductoStock;
+    origen: OrigenMovimientoStock;
+    origen_id: number;
+    aprovechable: number;
+    usuario_id?: number | null;
+    motivo: string;
+  },
+) {
+  const { rastreado, neto } = await netoPorOrigen(tx, d.origen, d.origen_id);
+  if (!rastreado) return;
+  const delta = Number((d.aprovechable - neto).toFixed(2));
+  if (delta === 0) return;
+  await aplicarMovimientoStock(tx, {
+    producto: d.producto,
+    tipo: 'Ajuste',
+    cantidad: delta,
+    origen: d.origen,
+    origen_id: d.origen_id,
+    motivo: d.motivo,
+    usuario_id: d.usuario_id ?? undefined,
+  });
+}
+
 export interface MovimientosStockFiltros {
   producto?: ProductoStock;
   origen?: string;

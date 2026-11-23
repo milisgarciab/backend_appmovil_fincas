@@ -3,7 +3,7 @@ import {
   ProduccionLecheRepository,
   ProduccionLecheFiltros,
 } from '../repositories/produccionLeche.repository';
- 
+
 export class ServiceError extends Error {
   constructor(
     message: string,
@@ -13,9 +13,9 @@ export class ServiceError extends Error {
     super(message);
   }
 }
- 
+
 const JORNADAS_VALIDAS = ['Mañana', 'Tarde'];
- 
+
 export interface CrearProduccionLecheInput {
   animal_id?: number;
   lote_id?: number;
@@ -24,21 +24,21 @@ export interface CrearProduccionLecheInput {
   observaciones?: string;
   registrado_en?: string;
 }
- 
+
 export interface ActualizarProduccionLecheInput {
   litros?: number;
   jornada?: string;
   observaciones?: string;
   registrado_en?: string;
 }
- 
+
 export class ProduccionLecheService {
   private repository = new ProduccionLecheRepository();
- 
+
   listAll(filtros: ProduccionLecheFiltros) {
     return this.repository.findAll(filtros);
   }
- 
+
   async getById(id: number) {
     const registro = await this.repository.findById(id);
     if (!registro) {
@@ -46,7 +46,7 @@ export class ProduccionLecheService {
     }
     return registro;
   }
- 
+
   private validar(input: { litros?: number; observaciones?: string; registrado_en?: string }) {
     if (input.litros !== undefined && input.litros < 0) {
       throw new ServiceError('litros debe ser >= 0', 400, 'VALIDATION_ERROR');
@@ -61,7 +61,7 @@ export class ProduccionLecheService {
       }
     }
   }
- 
+
   // `usuarioId` se toma SIEMPRE del token (nunca del body que manda el
   // cliente) — así "quién lo registró" no se puede falsear (2026-10-01).
   async create(input: CrearProduccionLecheInput, usuarioId: number) {
@@ -78,7 +78,7 @@ export class ProduccionLecheService {
       throw new ServiceError('jornada debe ser "Mañana" o "Tarde"', 400, 'VALIDATION_ERROR');
     }
     this.validar(input);
- 
+
     try {
       return await this.repository.create({
         animal_id: input.animal_id,
@@ -93,15 +93,21 @@ export class ProduccionLecheService {
       throw this.mapPrismaError(error);
     }
   }
- 
-  async update(id: number, input: ActualizarProduccionLecheInput) {
-    await this.getById(id);
+
+  // `usuarioId` viene del token: solo se usa para atribuir el movimiento de stock.
+  async update(id: number, input: ActualizarProduccionLecheInput, usuarioId: number) {
+    const actual = await this.getById(id);
+    // Un registro eliminado ya no se puede editar (su stock ya se revirtió).
+    if (actual.eliminado_en) {
+      throw new ServiceError('No se puede editar un registro eliminado', 400, 'REGISTRO_ELIMINADO');
+    }
     if (input.jornada && !JORNADAS_VALIDAS.includes(input.jornada)) {
       throw new ServiceError('jornada debe ser "Mañana" o "Tarde"', 400, 'VALIDATION_ERROR');
     }
     this.validar(input);
     try {
       return await this.repository.update(id, {
+        usuario_id: usuarioId,
         litros: input.litros,
         jornada: input.jornada,
         observaciones: input.observaciones,
@@ -111,7 +117,7 @@ export class ProduccionLecheService {
       throw this.mapPrismaError(error);
     }
   }
- 
+
   // Borrado lógico — ver comentario en el repositorio. `usuarioId` también
   // viene siempre del token.
   async delete(id: number, usuarioId: number) {
@@ -119,10 +125,21 @@ export class ProduccionLecheService {
     if (registro.eliminado_en) {
       throw new ServiceError('El registro ya fue eliminado', 400, 'ALREADY_DELETED');
     }
-    await this.repository.softDelete(id, usuarioId);
+    try {
+      await this.repository.softDelete(id, usuarioId);
+    } catch (error) {
+      throw this.mapPrismaError(error);
+    }
   }
- 
+
   private mapPrismaError(error: unknown): ServiceError {
+    if (error instanceof Error && error.message === 'STOCK_INSUFICIENTE') {
+      return new ServiceError(
+        'No se puede aplicar el cambio: el stock quedaría negativo (parte de esta producción ya se vendió)',
+        400,
+        'STOCK_INSUFICIENTE',
+      );
+    }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
       return new ServiceError('animal_id o lote_id no existe', 400, 'INVALID_REFERENCE');
     }
@@ -130,4 +147,3 @@ export class ProduccionLecheService {
     return new ServiceError('Error interno del servidor', 500, 'INTERNAL_ERROR');
   }
 }
- 
