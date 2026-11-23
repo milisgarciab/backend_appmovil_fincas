@@ -18,6 +18,11 @@ export class IndicadoresProduccionService {
       this.repository.countAnimalesConProduccionLeche({ fechaInicio, fechaFin }),
     ]);
 
+    // Desglose de huevos (aditivo): producidos = total_unidades; rotos y
+    // aprovechables (producidos - rotos) son los campos nuevos.
+    const huevosProducidos = huevos._sum.cantidad ?? 0;
+    const huevosRotos = huevos._sum.cantidad_rotos ?? 0;
+
     return {
       periodo: {
         fecha_inicio: input.fecha_inicio ?? null,
@@ -33,6 +38,8 @@ export class IndicadoresProduccionService {
         total_unidades: huevos._sum.cantidad ?? 0,
         promedio_unidades_por_registro: Number(huevos._avg.cantidad ?? 0),
         cantidad_registros: huevos._count.id,
+        total_rotos: huevosRotos,
+        total_aprovechables: huevosProducidos - huevosRotos,
       },
     };
   }
