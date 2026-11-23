@@ -388,6 +388,8 @@ model usuarios {
   reset_token_expira            DateTime?                      @db.Timestamp(6)
   roles                         roles                          @relation(fields: [rol_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   movimientos_inventario        movimientos_inventario[]
+  // Stock de productos de finca (2026-11-23): movimientos hechos por este usuario.
+  movimientos_stock             movimientos_stock[]
   // Auditoría (2026-10-01): registros de producción creados/eliminados por
   // este usuario. Son listas inversas, no agregan columnas a `usuarios`.
   produccion_leche_creada       produccion_leche[]             @relation("ProduccionLecheCreadoPor")
@@ -428,4 +430,34 @@ model ventas {
   fecha_pago        DateTime? @db.Date
   fecha_limite_pago DateTime? @db.Date
   creado_en         DateTime? @default(now()) @db.Timestamp(6)
+}
+
+// Stock de productos de finca (2026-11-23): Huevos en unidades y Leche en
+// litros. Las dos filas se crean solas la primera vez que se usa el stock.
+model productos_finca {
+  id                Int                 @id @default(autoincrement())
+  nombre            String              @unique @db.VarChar(50)
+  unidad            String              @db.VarChar(20)
+  stock_actual      Decimal             @default(0) @db.Decimal(10, 2)
+  movimientos_stock movimientos_stock[]
+}
+
+// Un movimiento por cada cambio de stock. La cantidad de un Ajuste puede ser
+// negativa. `origen_id` apunta al registro que lo generó (producción o venta)
+// y no tiene clave foránea porque depende del `origen`.
+model movimientos_stock {
+  id              Int             @id @default(autoincrement())
+  producto_id     Int
+  tipo            String          @db.VarChar(20) // Entrada | Salida | Ajuste
+  cantidad        Decimal         @db.Decimal(10, 2)
+  origen          String          @db.VarChar(30) // ProduccionHuevos | ProduccionLeche | Venta | Manual
+  origen_id       Int?
+  motivo          String?
+  usuario_id      Int?
+  fecha           DateTime        @default(now()) @db.Timestamp(6)
+  productos_finca productos_finca @relation(fields: [producto_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  usuarios        usuarios?       @relation(fields: [usuario_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([origen, origen_id])
+  @@index([producto_id, fecha])
 }

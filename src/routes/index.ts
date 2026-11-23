@@ -26,11 +26,13 @@ import nacimientoRoutes from './nacimiento.routes';
 import movimientoInventarioRoutes from './movimientoInventario.routes';
 import movimientoUbicacionRoutes from './movimientoUbicacion.routes';
 import auditoriaRoutes from './auditoria.routes';
+import stockRoutes from './stock.routes';
 // ...
 const router = Router();
 router.use('/auditoria', auditoriaRoutes);
 router.use('/animales', movimientoUbicacionRoutes);
 router.use('/movimientos-inventario', movimientoInventarioRoutes);
+router.use('/stock', stockRoutes);
 router.use('/nacimientos', nacimientoRoutes);
 router.use('/produccion', indicadoresProduccionRoutes);
 router.use('/alimentacion', alimentacionRoutes);
