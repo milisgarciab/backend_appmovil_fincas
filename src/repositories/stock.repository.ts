@@ -158,6 +158,57 @@ export async function compensarProduccion(
   });
 }
 
+// Deja el stock de una venta como debe estar según su producto y cantidad
+// FINALES (`producto` null = ya no descuenta stock, por ejemplo al eliminarla).
+// Crea un Ajuste por cada diferencia; primero las devoluciones y al final los
+// descuentos. Si la venta es anterior a la activación del stock (sin
+// movimientos), no hace nada.
+export async function sincronizarVenta(
+  tx: Prisma.TransactionClient,
+  d: {
+    venta_id: number;
+    producto: ProductoStock | null;
+    cantidad: number;
+    usuario_id?: number | null;
+    motivo: string;
+  },
+) {
+  const movimientos = await tx.movimientos_stock.findMany({
+    where: { origen: 'Venta', origen_id: d.venta_id },
+    select: { tipo: true, cantidad: true, productos_finca: { select: { nombre: true } } },
+  });
+  if (movimientos.length === 0) return;
+
+  const neto: Record<string, number> = {};
+  for (const m of movimientos) {
+    const nombre = m.productos_finca.nombre;
+    neto[nombre] = (neto[nombre] ?? 0) + (m.tipo === 'Salida' ? -Number(m.cantidad) : Number(m.cantidad));
+  }
+
+  const productos = new Set<string>(Object.keys(neto));
+  if (d.producto) productos.add(d.producto);
+
+  const ajustes = Array.from(productos)
+    .map((nombre) => {
+      const deseado = nombre === d.producto ? -d.cantidad : 0;
+      return { producto: nombre as ProductoStock, delta: Number((deseado - (neto[nombre] ?? 0)).toFixed(2)) };
+    })
+    .filter((a) => a.delta !== 0)
+    .sort((a, b) => b.delta - a.delta);
+
+  for (const a of ajustes) {
+    await aplicarMovimientoStock(tx, {
+      producto: a.producto,
+      tipo: 'Ajuste',
+      cantidad: a.delta,
+      origen: 'Venta',
+      origen_id: d.venta_id,
+      motivo: d.motivo,
+      usuario_id: d.usuario_id ?? undefined,
+    });
+  }
+}
+
 export interface MovimientosStockFiltros {
   producto?: ProductoStock;
   origen?: string;
@@ -165,6 +216,12 @@ export interface MovimientosStockFiltros {
 }
 
 export class StockRepository {
+  // Stock disponible de un producto (0 si todavía no existe su fila).
+  async disponible(producto: ProductoStock) {
+    const fila = await prisma.productos_finca.findUnique({ where: { nombre: producto } });
+    return { stock: fila ? Number(fila.stock_actual) : 0, unidad: PRODUCTOS_STOCK[producto].unidad };
+  }
+
   // Garantiza que existan las dos filas de producto (stock 0 la primera vez).
   async listarStock() {
     for (const nombre of Object.keys(PRODUCTOS_STOCK) as ProductoStock[]) {

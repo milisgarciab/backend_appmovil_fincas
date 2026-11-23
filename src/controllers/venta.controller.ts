@@ -18,7 +18,7 @@ export class VentaController {
 
   create = async (req: Request, res: Response) => {
     try {
-      res.status(201).json(await this.service.create(req.body));
+      res.status(201).json(await this.service.create(req.body, req.usuario!.id));
     } catch (error) {
       this.handleError(error, res);
     }
@@ -26,7 +26,7 @@ export class VentaController {
 
   update = async (req: Request, res: Response) => {
     try {
-      res.json(await this.service.update(Number(req.params.id), req.body));
+      res.json(await this.service.update(Number(req.params.id), req.body, req.usuario!.id));
     } catch (error) {
       this.handleError(error, res);
     }
@@ -34,7 +34,7 @@ export class VentaController {
 
   delete = async (req: Request, res: Response) => {
     try {
-      await this.service.delete(Number(req.params.id));
+      await this.service.delete(Number(req.params.id), req.usuario!.id);
       res.status(204).send();
     } catch (error) {
       this.handleError(error, res);
